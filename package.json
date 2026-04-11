@@ -1,0 +1,10 @@
+{
+  "name": "equeue-root",
+  "private": true,
+  "scripts": {
+    "install": "npm install --prefix ./equeue-backend && npm install --prefix ./equeue-frontend",
+    "start:backend": "powershell -Command \"$env:PORT=1188; npm --prefix ./equeue-backend run dev\"",
+    "start:frontend": "npm --prefix ./equeue-frontend run dev",
+    "start": "powershell -NoExit -Command \"Start-Process powershell -ArgumentList '-NoExit','-Command','cd .\\equeue-backend; npm run dev'\"; powershell -NoExit -Command \"Start-Process powershell -ArgumentList '-NoExit','-Command','cd .\\equeue-frontend; npm run dev'\""
+  }
+}

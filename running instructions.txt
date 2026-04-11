@@ -1,0 +1,7 @@
+
+Path:
+C:\Users\Admin\Desktop\equeue
+npm run start
+
+http://localhost:5173 [connected with api to backend]
+http://localhost:1188  [backend connected]
