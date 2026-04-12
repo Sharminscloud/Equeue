@@ -58,7 +58,7 @@ export function ServiceList({ services, onEdit, onDelete }: ServiceListProps) {
                 </td>
                 <td className="px-6 py-4 text-foreground">{service.avgProcessingTime} min</td>
                 <td className="px-6 py-4 text-foreground">
-                  {service.fee === 0 ? 'Free' : `Rs. ${service.fee.toLocaleString()}`}
+                  {service.fee === 0 ? 'Free' : `TK. ${service.fee.toLocaleString()}`}
                 </td>
                 <td className="px-6 py-4">
                   <span className={getPriorityColor(service.priority)}>{service.priority}</span>

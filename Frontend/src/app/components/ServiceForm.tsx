@@ -122,7 +122,7 @@ export function ServiceForm({ service, onSave, onCancel }: ServiceFormProps) {
               </div>
 
               <div>
-                <label className="block mb-2 text-foreground">Service Fee (Rs.)</label>
+                <label className="block mb-2 text-foreground">Service Fee (TK.)</label>
                 <input
                   type="number"
                   required

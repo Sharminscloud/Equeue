@@ -103,17 +103,17 @@ export default function App() {
   ]);
 
   const availableBranches: Branch[] = [
-    { id: 'b1', name: 'Main Branch - Islamabad', location: 'F-6, Islamabad', capacity: 20 },
-    { id: 'b2', name: 'Karachi Central', location: 'Saddar, Karachi', capacity: 25 },
+    { id: 'b1', name: 'Main Branch - Chittagong', location: 'F-6, Chittagong', capacity: 20 },
+    { id: 'b2', name: 'Rajshahi Central', location: 'Saddar, Rajshahi', capacity: 25 },
     { id: 'b3', name: 'Dhaka Office', location: 'Mirpur, Dhaka', capacity: 22 },
-    { id: 'b4', name: 'Rawalpindi Branch', location: 'Saddar, Rawalpindi', capacity: 18 },
-    { id: 'b5', name: 'Peshawar Branch', location: 'University Road, Peshawar', capacity: 15 },
+    { id: 'b4', name: 'Khulna Branch', location: 'Saddar, Khulna', capacity: 18 },
+    { id: 'b5', name: 'Sylhet Branch', location: 'University Road, Sylhet', capacity: 15 },
   ];
 
   const [branchAssignments, setBranchAssignments] = useState<Record<string, BranchAssignment[]>>({
     '1': [
-      { branchId: 'b1', branchName: 'Main Branch - Islamabad', isActive: true, customProcessingTime: 40 },
-      { branchId: 'b2', branchName: 'Karachi Central', isActive: true, customCapacity: 30 },
+      { branchId: 'b1', branchName: 'Main Branch - Chittagong', isActive: true, customProcessingTime: 40 },
+      { branchId: 'b2', branchName: 'Rajshahi Central', isActive: true, customCapacity: 30 },
     ],
   });
 
