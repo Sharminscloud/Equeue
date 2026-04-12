@@ -74,7 +74,7 @@ const createToken = async (req, res) => {
       isPriority: !!isPriority,
       queueNumber,
     });
-
+    //ok
     const populatedToken = await Token.findById(token._id)
       .populate("branch", "name")
       .populate("service", "name");

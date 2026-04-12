@@ -15,7 +15,7 @@ const isSlotAvailable = async (
     timeSlot,
     status: { $in: ["Confirmed", "Rescheduled"] },
   };
-
+  //ok
   if (excludeAppointmentId) {
     query._id = { $ne: excludeAppointmentId };
   }

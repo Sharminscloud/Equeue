@@ -17,7 +17,7 @@ const appointmentHistorySchema = new mongoose.Schema(
   },
   { _id: false },
 );
-
+//ok
 const appointmentSchema = new mongoose.Schema(
   {
     serviceType: {
@@ -62,3 +62,4 @@ const appointmentSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Appointment", appointmentSchema);
+//ok
