@@ -1,0 +1,36 @@
+const mongoose = require('mongoose');
+
+const historySchema = new mongoose.Schema({
+  status: {
+    type: String,
+    enum: ['Confirmed', 'Cancelled', 'Rescheduled'],
+    required: true,
+  },
+  date: { type: Date, required: true },
+  timeSlot: { type: String, required: true },
+  changedAt: { type: Date, default: Date.now },
+});
+
+const appointmentSchema = new mongoose.Schema(
+  {
+    serviceType: { type: String, required: true },
+    date: { type: Date, required: true },
+    timeSlot: { type: String, required: true },
+    userName: { type: String, required: true },
+    userEmail: { type: String, required: true },
+    userPhone: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ['Confirmed', 'Cancelled', 'Rescheduled'],
+      default: 'Confirmed',
+    },
+    history: [historySchema],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+appointmentSchema.index({ serviceType: 1, date: 1, timeSlot: 1 });
+
+module.exports = mongoose.model('Appointment', appointmentSchema);
