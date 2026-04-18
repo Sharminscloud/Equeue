@@ -12,7 +12,10 @@ const RequestTokenPage = () => {
     branchId: "",
     serviceId: "",
     preferredDate: "",
-    isPriority: false
+    isPriority: false,
+    citizenName: "",
+    email: "",
+    phone: ""
   });
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -39,6 +42,16 @@ const RequestTokenPage = () => {
 
     loadData();
   }, []);
+  
+  useEffect(() => {
+  if (!successData) return;
+
+  const timer = setTimeout(() => {
+    setSuccessData(null);
+  }, 5000);
+
+  return () => clearTimeout(timer);
+}, [successData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -74,6 +87,12 @@ const RequestTokenPage = () => {
     <div className="page-wrapper">
       <div className="token-card">
         <h1>Request Digital Queue Token</h1>
+          
+        <div style={{ marginBottom: "20px" }}>
+          <a href="/" style={{ marginRight: "16px" }}>Token Page</a>
+          <a href="/appointments" style={{ marginRight: "16px" }}>Appointment Page</a>
+          <a href="/notifications">Notification Logs</a>
+        </div>
 
         <form onSubmit={handleSubmit} className="token-form">
           <div className="form-group">
@@ -131,6 +150,39 @@ const RequestTokenPage = () => {
             />
             <label htmlFor="priority">Request Priority Token</label>
           </div>
+          
+          <div className="form-group">
+            <label>Citizen Name</label>
+            <input
+              type="text"
+              name="citizenName"
+              value={formData.citizenName}
+              onChange={handleChange}
+              placeholder="Enter your name"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Phone Number</label>
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Enter your phone number"
+            />
+          </div>
 
           <button type="submit" className="submit-btn" disabled={loading}>
             {loading ? "Generating..." : "Generate Token"}
@@ -158,6 +210,16 @@ const RequestTokenPage = () => {
               <strong>Priority:</strong>{" "}
               {successData.isPriority ? "Yes" : "No"}
             </p>
+            <p>
+              <strong>Citizen Name:</strong> {successData.citizenName || "N/A"}
+            </p>
+            <p>
+              <strong>Email:</strong> {successData.email || "N/A"}
+            </p>
+            <p>
+              <strong>Phone:</strong> {successData.phone || "N/A"}
+            </p>
+            
           </div>
         )}
       </div>

@@ -26,7 +26,7 @@ export const getServices = async (req, res) => {
 
 export const createToken = async (req, res) => {
   try {
-    const { branchId, serviceId, preferredDate, isPriority } = req.body;
+    const { branchId, serviceId, preferredDate, isPriority, citizenName, email, phone } = req.body;
 
     if (!branchId || !serviceId || !preferredDate) {
       return res.status(400).json({
@@ -73,6 +73,9 @@ export const createToken = async (req, res) => {
       preferredDate,
       isPriority: !!isPriority,
       queueNumber,
+      citizenName: citizenName || "",
+      email: email || "",
+      phone: phone || "",
     });
 
     const populatedToken = await Token.findById(token._id)

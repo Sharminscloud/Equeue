@@ -30,8 +30,24 @@ const tokenSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["waiting", "served", "cancelled"],
+      enum: ["waiting", "approaching", "served", "cancelled"],
       default: "waiting"
+    },
+    citizenName: {
+      type: String,
+      default: ""
+    },
+    email: {
+      type: String,
+      default: ""
+    },
+    phone: {
+      type: String,
+      default: ""
+    },
+    queueAlertSent: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }
