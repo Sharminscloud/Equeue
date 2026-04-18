@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import BranchMap from './components/BranchMap';
+import BranchSelector from './components/BranchSelector';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-const serviceOptions = ['General Inquiry', 'License Renewal', 'Document Verification', 'Health Service'];
+const serviceOptions = ['General Inquiry', 'License Renewal', 'Document Verification', 'Health Service','Others'];
 
 const SLOT_OPTIONS = [
   '09:00 - 09:30',
@@ -32,6 +34,8 @@ function App() {
   const [rescheduleId, setRescheduleId] = useState(null);
   const [rescheduleDate, setRescheduleDate] = useState(formatDateForInput(new Date()));
   const [rescheduleSlot, setRescheduleSlot] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [showMap, setShowMap] = useState(false);
 
   const availableSlots = useMemo(() => {
     if (slots.length > 0) return slots;
@@ -95,6 +99,10 @@ function App() {
       userEmail,
       userPhone,
     };
+
+    if (selectedBranch) {
+      payload.branch = selectedBranch._id;
+    }
 
     try {
       setLoading(true);
@@ -185,6 +193,15 @@ function App() {
     setRescheduleSlot('');
   };
 
+  const handleBranchSelect = (branch) => {
+    setSelectedBranch(branch);
+    setShowMap(false);
+  };
+
+  const handleClearBranch = () => {
+    setSelectedBranch(null);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -193,7 +210,36 @@ function App() {
           <p className="mt-2 max-w-2xl text-slate-300">
             Book, cancel, and reschedule service appointments with live slot availability.
           </p>
+          <button
+            onClick={() => setShowMap(!showMap)}
+            className="mt-4 rounded-2xl bg-sky-500 px-6 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+          >
+            {showMap ? 'Hide Map' : 'View Branch Map'}
+          </button>
         </div>
+
+        {showMap && (
+          <div className="mb-8 space-y-4">
+            <div className="rounded-3xl border border-slate-700 bg-slate-900/80 p-4">
+              <label className="space-y-2 text-sm text-slate-300">
+                Filter by Service
+                <select
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-400"
+                  value={serviceType}
+                  onChange={(e) => setServiceType(e.target.value)}
+                >
+                  <option value="">All Services</option>
+                  {serviceOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <BranchMap onBranchSelect={handleBranchSelect} selectedService={serviceType} />
+          </div>
+        )}
 
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="space-y-6 rounded-3xl border border-slate-700 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/20">
@@ -201,6 +247,10 @@ function App() {
               <h2 className="text-2xl font-semibold text-white">Book an Appointment</h2>
               <p className="mt-2 text-slate-400">Choose service, date, and available slot.</p>
             </div>
+
+            {selectedBranch && (
+              <BranchSelector selectedBranch={selectedBranch} onClear={handleClearBranch} />
+            )}
 
             <form className="space-y-4" onSubmit={handleBooking}>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -277,8 +327,17 @@ function App() {
                 <input
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-sky-400"
                   value={userPhone}
-                  onChange={(e) => setUserPhone(e.target.value)}
-                  placeholder="Your phone number"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Ensure it starts with + and only contains numbers after that
+                    if (val === '' || val === '+') {
+                      setUserPhone('+');
+                    } else {
+                      const numericBody = val.slice(1).replace(/\D/g, '');
+                      setUserPhone('+' + numericBody);
+                    }
+                  }}
+                  placeholder="+8801XXXXXXXXX"
                   type="tel"
                 />
               </label>
@@ -315,16 +374,27 @@ function App() {
                   <div key={appointment._id} className="rounded-3xl border border-slate-700 bg-slate-950/80 p-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-sm uppercase tracking-[0.2em] text-sky-300">{appointment.serviceType}</p>
-                        <p className="mt-2 text-lg font-semibold text-white">{new Date(appointment.date).toLocaleDateString()}</p>
+                        {appointment.branch && (
+                          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+                            {appointment.branch.name}
+                          </div>
+                        )}
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{appointment.serviceType}</p>
+                        <p className="mt-1 text-lg font-semibold text-white">{new Date(appointment.date).toLocaleDateString()}</p>
                         <p className="text-slate-400">{appointment.timeSlot}</p>
+                        {appointment.branch && (
+                          <p className="mt-1.5 text-xs text-slate-500 line-clamp-1 italic">
+                            {appointment.branch.address}
+                          </p>
+                        )}
                       </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${
                           appointment.status === 'Confirmed'
-                            ? 'bg-emerald-500/15 text-emerald-300'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : appointment.status === 'Cancelled'
-                            ? 'bg-rose-500/15 text-rose-300'
-                            : 'bg-amber-500/15 text-amber-300'
+                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                         }`}
                       >
                         {appointment.status}
@@ -418,3 +488,4 @@ function App() {
 }
 
 export default App;
+
