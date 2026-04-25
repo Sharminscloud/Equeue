@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import BranchMap from './components/BranchMap';
 import BranchSelector from './components/BranchSelector';
+import QueueStatus from './pages/QueueStatus';
+import AdminReports from './pages/AdminReports';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-const serviceOptions = ['General Inquiry', 'License Renewal', 'Document Verification', 'Health Service','Others'];
+const serviceOptions = ['General Inquiry', 'License Renewal', 'Document Verification', 'Health Service'];
 
 const SLOT_OPTIONS = [
   '09:00 - 09:30',
@@ -36,6 +38,7 @@ function App() {
   const [rescheduleSlot, setRescheduleSlot] = useState('');
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [showMap, setShowMap] = useState(false);
+  const [currentView, setCurrentView] = useState('booking');
 
   const availableSlots = useMemo(() => {
     if (slots.length > 0) return slots;
@@ -205,18 +208,47 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-3xl border border-slate-700 bg-slate-900/80 p-8 shadow-xl shadow-slate-950/20">
-          <h1 className="text-3xl font-semibold text-white">EQueue Appointment System</h1>
-          <p className="mt-2 max-w-2xl text-slate-300">
-            Book, cancel, and reschedule service appointments with live slot availability.
-          </p>
+        
+        {/* Navigation Bar */}
+        <div className="mb-8 flex gap-4 border-b border-slate-800 pb-4 overflow-x-auto">
           <button
-            onClick={() => setShowMap(!showMap)}
-            className="mt-4 rounded-2xl bg-sky-500 px-6 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+            onClick={() => setCurrentView('booking')}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition ${currentView === 'booking' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
-            {showMap ? 'Hide Map' : 'View Branch Map'}
+            Appointments & Map
+          </button>
+          <button
+            onClick={() => setCurrentView('queueStatus')}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition ${currentView === 'queueStatus' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            Live Queue Status
+          </button>
+          <button
+            onClick={() => setCurrentView('adminReports')}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition ${currentView === 'adminReports' ? 'bg-sky-500 text-slate-950' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            Admin Reports
           </button>
         </div>
+
+        {currentView === 'queueStatus' && <QueueStatus />}
+        
+        {currentView === 'adminReports' && <AdminReports />}
+        
+        {currentView === 'booking' && (
+          <>
+            <div className="mb-8 rounded-3xl border border-slate-700 bg-slate-900/80 p-8 shadow-xl shadow-slate-950/20">
+              <h1 className="text-3xl font-semibold text-white">EQueue Appointment System</h1>
+              <p className="mt-2 max-w-2xl text-slate-300">
+                Book, cancel, and reschedule service appointments with live slot availability.
+              </p>
+              <button
+                onClick={() => setShowMap(!showMap)}
+                className="mt-4 rounded-2xl bg-sky-500 px-6 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+              >
+                {showMap ? 'Hide Map' : 'View Branch Map'}
+              </button>
+            </div>
 
         {showMap && (
           <div className="mb-8 space-y-4">
@@ -482,10 +514,11 @@ function App() {
             </form>
           </div>
         )}
+          </>
+        )}
       </div>
     </div>
   );
 }
 
 export default App;
-
