@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const historySchema = new mongoose.Schema({
   status: {
     type: String,
-    enum: ['Confirmed', 'Cancelled', 'Rescheduled'],
+    enum: ['Confirmed', 'Cancelled', 'Rescheduled', 'In-Progress', 'Served'],
     required: true,
   },
   date: { type: Date, required: true },
@@ -18,24 +18,33 @@ const appointmentSchema = new mongoose.Schema(
       ref: 'Branch',
       required: false,
     },
+
     serviceType: { type: String, required: true },
+
     date: { type: Date, required: true },
+
     timeSlot: { type: String, required: true },
+
     userName: { type: String, required: true },
     userEmail: { type: String, required: true },
     userPhone: { type: String, required: true },
+
+    tokenNumber: { type: Number },
+
+    servedAt: { type: Date },
+
     status: {
       type: String,
-      enum: ['Confirmed', 'Cancelled', 'Rescheduled'],
+      enum: ['Confirmed', 'Cancelled', 'Rescheduled', 'In-Progress', 'Served'],
       default: 'Confirmed',
     },
+
     history: [historySchema],
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
+// Indexes for performance
 appointmentSchema.index({ serviceType: 1, date: 1, timeSlot: 1 });
 appointmentSchema.index({ branch: 1, date: 1, status: 1 });
 
