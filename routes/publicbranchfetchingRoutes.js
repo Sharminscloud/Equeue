@@ -1,5 +1,5 @@
 const express = require('express');
-const Branch = require('../models/Branch');
+const Branch = require('../models/publicbranchfetching');
 
 const router = express.Router();
 
