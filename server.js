@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const branchRoutes = require("./routes/branchRoutes");
 const waitingRoutes = require("./routes/waitingRoutes");
 const authRoutes = require("./routes/authRoutes");
+const tokenRoutes = require("./routes/tokenRoutes");
 
 dotenv.config();
 connectDB();
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || 1163;
 
 app.use(cors());
 app.use(express.json());
+app.use("/api/tokens", tokenRoutes);
 
 app.get("/", (req, res) => {
   res.send("EQueue backend is running");
