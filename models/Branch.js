@@ -51,13 +51,19 @@ const branchSchema = new mongoose.Schema(
     status: {
       type: String,
       required: [true, "Status is required"],
+      default: "Active",
       enum: {
         values: ["Active", "Inactive", "Maintenance"],
         message: "Status must be Active, Inactive, or Maintenance",
       },
     },
+
+    // ── Added for Shahrin's features ──
+    // availableServices: { type: [String], default: [] },
+    // isActive: { type: Boolean, default: true },
   },
   { timestamps: true },
 );
-
 module.exports = mongoose.model("Branch", branchSchema);
+//ok
+//
