@@ -18,9 +18,8 @@ const SLOT_OPTIONS = [
 ];
 
 const getDateOnly = (dateString) => {
-  const date = new Date(dateString);
-  date.setHours(0, 0, 0, 0);
-  return date;
+  const [year, month, day] = dateString.split("-");
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
 };
 
 router.get("/", (req, res) => {
@@ -33,13 +32,7 @@ router.get("/", (req, res) => {
 // GET /api/slots/search?branchId=&serviceType=&date=&timeSlot=&maxQueueLength=&page=&limit=
 router.get("/search", async (req, res) => {
   try {
-    const {
-      branchId,
-      serviceType,
-      date,
-      timeSlot,
-      maxQueueLength,
-    } = req.query;
+    const { branchId, serviceType, date, timeSlot, maxQueueLength } = req.query;
 
     const searchDate = date || new Date().toISOString().split("T")[0];
 
@@ -82,7 +75,7 @@ router.get("/search", async (req, res) => {
       }
 
       const bookedSlots = filteredAppointments.map(
-        (appointment) => appointment.timeSlot
+        (appointment) => appointment.timeSlot,
       );
 
       const availableSlots = SLOT_OPTIONS.filter((slot) => {
@@ -146,7 +139,7 @@ router.get("/availability", async (req, res) => {
     const bookedSlots = booked.map((appointment) => appointment.timeSlot);
 
     const availableSlots = SLOT_OPTIONS.filter(
-      (slot) => !bookedSlots.includes(slot)
+      (slot) => !bookedSlots.includes(slot),
     );
 
     res.json({

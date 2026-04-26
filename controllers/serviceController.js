@@ -1,6 +1,6 @@
-const Service = require("../models/service");
-const ServiceBranch = require("../models/ServiceBranch");
-const Branch = require("../models/branch");
+const Service = require("../service");
+const ServiceBranch = require("../models/serviceBranch");
+const Branch = require("../models/Branch");
 const mongoose = require("mongoose");
 
 // CREATE SERVICE
@@ -36,11 +36,10 @@ exports.getBranches = async (req, res) => {
 // UPDATE SERVICE
 exports.updateService = async (req, res) => {
   try {
-    const service = await Service.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const service = await Service.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
     if (!service) return res.status(404).json({ message: "Service not found" });
     res.json(service);
   } catch (error) {
@@ -61,7 +60,8 @@ exports.deleteService = async (req, res) => {
 // LINK SERVICE TO BRANCH
 exports.linkServiceToBranch = async (req, res) => {
   try {
-    const { serviceId, branchId, customProcessingTime, capacityPerDay } = req.body;
+    const { serviceId, branchId, customProcessingTime, capacityPerDay } =
+      req.body;
 
     const link = await ServiceBranch.findOneAndUpdate(
       { serviceId, branchId },
@@ -71,7 +71,7 @@ exports.linkServiceToBranch = async (req, res) => {
         customProcessingTime,
         capacityPerDay,
       },
-      { new: true, upsert: true, runValidators: true }
+      { new: true, upsert: true, runValidators: true },
     );
 
     res.status(201).json(link);
@@ -90,7 +90,7 @@ exports.getServiceBranches = async (req, res) => {
 
     const links = await ServiceBranch.find({ serviceId }).populate(
       "branchId",
-      "name location capacity capacityPerDay"
+      "name location capacity capacityPerDay",
     );
 
     res.json(links);
@@ -110,7 +110,7 @@ exports.syncServiceBranches = async (req, res) => {
     }
 
     const validAssignments = assignments.filter(
-      (a) => a?.branchId && mongoose.Types.ObjectId.isValid(a.branchId)
+      (a) => a?.branchId && mongoose.Types.ObjectId.isValid(a.branchId),
     );
     const requestedBranchIds = validAssignments.map((a) => a.branchId);
 
@@ -128,15 +128,15 @@ exports.syncServiceBranches = async (req, res) => {
           customProcessingTime: a.customProcessingTime,
           capacityPerDay: a.capacityPerDay,
         },
-        { upsert: true, new: true, runValidators: true }
-      )
+        { upsert: true, new: true, runValidators: true },
+      ),
     );
 
     await Promise.all(upserts);
 
     const updated = await ServiceBranch.find({ serviceId }).populate(
       "branchId",
-      "name location capacity capacityPerDay"
+      "name location capacity capacityPerDay",
     );
 
     res.json(updated);

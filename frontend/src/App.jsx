@@ -712,6 +712,37 @@ function App() {
 
   const navButtonClass = (view) =>
     currentView === view ? "nav-btn active" : "nav-btn";
+  const getActivityHistory = () => {
+  if (!activityResult) {
+    return [];
+  }
+
+  if (Array.isArray(activityResult.history)) {
+    return activityResult.history;
+  }
+
+  if (Array.isArray(activityResult.data)) {
+    return activityResult.data;
+  }
+
+  return [];
+};
+
+const formatActivityDate = (value) => {
+  if (!value) {
+    return "N/A";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
+};
+
+const activityHistory = getActivityHistory();
 
   if (!loggedInUser) {
     return (
@@ -849,7 +880,7 @@ function App() {
         {currentView === "sharmin" && (
           <>
             <div className="card">
-              <h2>Sharmin Feature 1: Branch Search and Filtering</h2>
+              <h2>Sharmin Feature : Branch Search and Filtering</h2>
 
               {branchMessage && <div className="message">{branchMessage}</div>}
 
@@ -871,7 +902,7 @@ function App() {
             </div>
 
             <div className="card">
-              <h2>Sharmin Feature 2: Branch Management</h2>
+              <h2>Sharmin Feature : Branch Management</h2>
 
               <form className="form" onSubmit={handleBranchSubmit}>
                 <input type="text" placeholder="Branch Name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -1005,7 +1036,7 @@ function App() {
         {currentView === "jakia" && (
           <>
             <div className="card">
-              <h2>Jakia Feature 1: Token Generation</h2>
+              <h2>Jakia Feature : Token Generation</h2>
 
               {tokenMessage && <div className="message">{tokenMessage}</div>}
 
@@ -1068,7 +1099,31 @@ function App() {
               </div>
 
               {activityMessage && <div className="message">{activityMessage}</div>}
-              {activityResult && <pre className="json-box">{JSON.stringify(activityResult, null, 2)}</pre>}
+              {activityResult && (() => {
+                const history = getActivityHistory();
+                return history.length === 0 ? (
+                  <div className="message">No citizen activity found for this email.</div>
+                ) : (
+                  <div className="branch-list">
+                    {history.map((item) => (
+                      <div className="branch-card" key={`${item.recordId}-${item.type}`}>
+                        <div className="branch-top">
+                          <h3>{item.type}</h3>
+                          <span className="status-badge active">{item.status || item.type}</span>
+                        </div>
+                        <p><strong>Service:</strong> {item.serviceName || "N/A"}</p>
+                        <p><strong>Branch:</strong> {item.branchName || "N/A"}</p>
+                        <p><strong>Date:</strong> {formatActivityDate(item.date)}</p>
+                        {item.timeSlot ? <p><strong>Time Slot:</strong> {item.timeSlot}</p> : null}
+                        {item.tokenNumber ? <p><strong>Token #:</strong> {item.tokenNumber}</p> : null}
+                        <p><strong>Email:</strong> {item.email || "—"}</p>
+                        <p><strong>Phone:</strong> {item.phone || "—"}</p>
+                        <p><strong>Recorded At:</strong> {formatActivityDate(item.createdAt)}</p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="card">
@@ -1104,7 +1159,35 @@ function App() {
                 <button type="button" onClick={searchSlots}>Search Slots</button>
               </div>
 
-              {slotSearchResult && <pre className="json-box">{JSON.stringify(slotSearchResult, null, 2)}</pre>}
+              {slotSearchResult && (
+                <>
+                  {slotSearchResult.success && slotSearchResult.totalResults === 0 ? (
+                    <div className="message">No available slots matched your criteria.</div>
+                  ) : null}
+
+                  {slotSearchResult.success && slotSearchResult.results && slotSearchResult.results.length > 0 ? (
+                    <div className="branch-list">
+                      {slotSearchResult.results.map((item) => (
+                        <div className="branch-card" key={`${item.branchId}-${item.date}-${item.serviceType}`}>
+                          <div className="branch-top">
+                            <h3>{item.branchName}</h3>
+                            <span className="status-badge active">Available</span>
+                          </div>
+                          <p><strong>Address:</strong> {item.address || "Unknown"}</p>
+                          <p><strong>Service:</strong> {item.serviceType}</p>
+                          <p><strong>Date:</strong> {item.date}</p>
+                          <p><strong>Current queue length:</strong> {item.currentQueueLength}</p>
+                          <p><strong>Available slots:</strong> {item.availableSlots.join(", ")}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {!slotSearchResult.success ? (
+                    <div className="message">{slotSearchResult.message || "Search failed"}</div>
+                  ) : null}
+                </>
+              )}
             </div>
 
             <div className="card">
@@ -1132,7 +1215,7 @@ function App() {
         {currentView === "gunjan" && (
           <>
             <div className="card">
-              <h2>Gunjan Feature 1: Service Configuration</h2>
+              <h2>Gunjan Feature : Service Configuration</h2>
 
               {serviceMessage && <div className="message">{serviceMessage}</div>}
 
@@ -1242,7 +1325,7 @@ function App() {
         {currentView === "shahrin" && (
           <>
             <div className="card map-section">
-              <h2>Shahrin Feature 1: Google Maps Branch Selection</h2>
+              <h2>Shahrin Feature : Google Maps Branch Selection</h2>
 
               <button type="button" onClick={() => setShowMap(!showMap)} className="map-toggle-btn">
                 {showMap ? "Hide Map" : "Choose Branch from Map"}
@@ -1260,7 +1343,7 @@ function App() {
             </div>
 
             <div className="card">
-              <h2>Shahrin Feature 2: Appointment Booking and Slot Availability</h2>
+              <h2>Shahrin Feature : Appointment Booking and Slot Availability</h2>
 
               {appointmentMessage && <div className="message">{appointmentMessage}</div>}
 

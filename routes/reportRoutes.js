@@ -1,23 +1,30 @@
-const express = require('express');
-const Report = require('../models/Report');
-const Appointment = require('../models/Appointment');
+const express = require("express");
+const Report = require("../models/Report");
+const Appointment = require("../models/Appointment");
 
 const router = express.Router();
 
-router.get('/generate', async (req, res) => {
+router.get("/generate", async (req, res) => {
   try {
     const { startDate, endDate, branchId } = req.query;
-    
+
     if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'startDate and endDate are required' });
+      return res
+        .status(400)
+        .json({ error: "startDate and endDate are required" });
     }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
     const query = {
       date: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $gte: start,
+        $lte: end,
       },
-      status: 'Served',
+      status: "Served",
     };
 
     if (branchId) {
@@ -28,7 +35,7 @@ router.get('/generate', async (req, res) => {
 
     const totalUsersServed = servedAppointments.length;
     let totalWaitTimeMs = 0;
-    
+
     // Calculate average wait time
     servedAppointments.forEach((appt) => {
       if (appt.servedAt && appt.createdAt) {
@@ -36,16 +43,17 @@ router.get('/generate', async (req, res) => {
       }
     });
 
-    const averageWaitTimeMs = totalUsersServed > 0 ? (totalWaitTimeMs / totalUsersServed) : 0;
+    const averageWaitTimeMs =
+      totalUsersServed > 0 ? totalWaitTimeMs / totalUsersServed : 0;
     const averageWaitTimeMinutes = Math.round(averageWaitTimeMs / (1000 * 60));
 
-    let queuePerformanceScore = 'Standard';
+    let queuePerformanceScore = "Standard";
     if (averageWaitTimeMinutes <= 15) {
-      queuePerformanceScore = 'Excellent';
+      queuePerformanceScore = "Excellent";
     } else if (averageWaitTimeMinutes <= 30) {
-      queuePerformanceScore = 'Good';
+      queuePerformanceScore = "Good";
     } else {
-      queuePerformanceScore = 'Poor';
+      queuePerformanceScore = "Poor";
     }
 
     res.json({
@@ -56,21 +64,20 @@ router.get('/generate', async (req, res) => {
         totalUsersServed,
         averageWaitTime: averageWaitTimeMinutes,
         queuePerformanceScore,
-      }
+      },
     });
-
   } catch (error) {
-    console.error('Failed to generate report:', error);
-    res.status(500).json({ error: 'Failed to generate report' });
+    console.error("Failed to generate report:", error);
+    res.status(500).json({ error: "Failed to generate report" });
   }
 });
 
-router.post('/save', async (req, res) => {
+router.post("/save", async (req, res) => {
   try {
     const { reportName, dateRange, branch, metrics } = req.body;
-    
+
     if (!reportName || !dateRange || !metrics) {
-      return res.status(400).json({ error: 'Missing required report fields' });
+      return res.status(400).json({ error: "Missing required report fields" });
     }
 
     const report = await Report.create({
@@ -82,29 +89,31 @@ router.post('/save', async (req, res) => {
 
     res.status(201).json(report);
   } catch (error) {
-    console.error('Failed to save report:', error);
-    res.status(500).json({ error: 'Failed to save report' });
+    console.error("Failed to save report:", error);
+    res.status(500).json({ error: "Failed to save report" });
   }
 });
 
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const reports = await Report.find().sort({ createdAt: -1 }).populate('branch');
+    const reports = await Report.find()
+      .sort({ createdAt: -1 })
+      .populate("branch");
     res.json(reports);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch reports' });
+    res.status(500).json({ error: "Failed to fetch reports" });
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const report = await Report.findByIdAndDelete(req.params.id);
     if (!report) {
-      return res.status(404).json({ error: 'Report not found' });
+      return res.status(404).json({ error: "Report not found" });
     }
-    res.json({ message: 'Report deleted successfully' });
+    res.json({ message: "Report deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete report' });
+    res.status(500).json({ error: "Failed to delete report" });
   }
 });
 
