@@ -3,11 +3,15 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 
-const authRoutes = require("./routes/authRoutes");
 const branchRoutes = require("./routes/branchRoutes");
 const waitingRoutes = require("./routes/waitingRoutes");
+const authRoutes = require("./routes/authRoutes");
 const tokenRoutes = require("./routes/tokenRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
+const slotRoutes = require("./routes/slotRoutes");
+const queueLoadRoutes = require("./routes/queueLoadRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 dotenv.config();
 connectDB();
@@ -27,6 +31,10 @@ app.use("/api/branches", branchRoutes);
 app.use("/api/waiting", waitingRoutes);
 app.use("/api/tokens", tokenRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/slots", slotRoutes);
+app.use("/api/queue-loads", queueLoadRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
