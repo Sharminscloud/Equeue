@@ -248,9 +248,17 @@ button:hover {
 }
 .map-section {
   margin-top: 30px;
-  padding: 20px;
-  background: #ffffff;
-  border-radius: 12px;
+}
+
+.map-toggle-btn {
+  margin-top: 12px;
+  margin-bottom: 15px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
 }
 
 .map-box {
