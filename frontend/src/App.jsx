@@ -1,3 +1,5 @@
+import BranchMap from "./components/BranchMap";
+import BranchSelector from "./components/BranchSelector";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import logo from "./assets/logo.png";
@@ -8,7 +10,8 @@ const WAITING_API = "http://localhost:1163/api/waiting";
 
 function App() {
   const [branches, setBranches] = useState([]);
-
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [showMap, setShowMap] = useState(false);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [latitude, setLatitude] = useState("23.7772");
@@ -249,7 +252,14 @@ function App() {
       setHolidayMessage("Failed to check holiday");
     }
   };
+  const handleBranchSelect = (branch) => {
+  setSelectedBranch(branch);
+  setShowMap(false);
+};
 
+const handleClearBranch = () => {
+  setSelectedBranch(null);
+};
   return (
     <div className="page">
       <div className="container">
@@ -592,10 +602,37 @@ function App() {
               <p>{holidayResult.message}</p>
             </div>
           )}
+                  <div className="card map-section">
+          <h2>Branch Map</h2>
+          <p>Select a branch from Google Maps.</p>
+
+          <button
+            type="button"
+            onClick={() => setShowMap(!showMap)}
+            className="map-toggle-btn"
+          >
+            {showMap ? "Hide Map" : "Choose Branch from Map"}
+          </button>
+
+          {selectedBranch && (
+            <BranchSelector
+              selectedBranch={selectedBranch}
+              onClear={handleClearBranch}
+            />
+          )}
+
+          {showMap && (
+            <div className="map-box">
+              <BranchMap
+                selectedService=""
+                onBranchSelect={handleBranchSelect}
+              />
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </div>
   );
 }
-
 export default App;
