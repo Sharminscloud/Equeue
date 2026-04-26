@@ -12,6 +12,7 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 const slotRoutes = require("./routes/slotRoutes");
 const queueLoadRoutes = require("./routes/queueLoadRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 dotenv.config();
 connectDB();
@@ -35,6 +36,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/slots", slotRoutes);
 app.use("/api/queue-loads", queueLoadRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
