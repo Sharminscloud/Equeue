@@ -1,6 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+
+dotenv.config();
+
 const connectDB = require("./config/db");
 
 const branchRoutes = require("./routes/branchRoutes");
@@ -13,7 +16,9 @@ const slotRoutes = require("./routes/slotRoutes");
 const queueLoadRoutes = require("./routes/queueLoadRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-dotenv.config();
+
+const { startReminderScheduler } = require("./utils/reminderScheduler");
+
 connectDB();
 
 const app = express();
@@ -36,6 +41,8 @@ app.use("/api/slots", slotRoutes);
 app.use("/api/queue-loads", queueLoadRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/notifications", notificationRoutes);
+
+startReminderScheduler();
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
