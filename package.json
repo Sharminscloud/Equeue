@@ -1,4 +1,5 @@
-{
+
+{"homepage": "https://Sharminscloud.github.io/Equeue",
   "name": "equeue-backend",
   "version": "1.0.0",
   "description": "EQueue backend for government service queue transparency and smart slot management system",
