@@ -1,3 +1,4 @@
+===== frontend/src/App.jsx =====
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useJsApiLoader } from "@react-google-maps/api";
@@ -7,31 +8,6 @@ import BranchMap from "./components/BranchMap.jsx";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:1163";
 const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
-
-const TIME_OPTIONS = [
-  "08:00",
-  "09:00",
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
-];
-
-const TIME_SLOT_OPTIONS = [
-  "09:00-10:00",
-  "10:00-11:00",
-  "11:00-12:00",
-  "12:00-13:00",
-  "13:00-14:00",
-  "14:00-15:00",
-  "15:00-16:00",
-  "16:00-17:00",
-];
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -44,7 +20,6 @@ function showError(error) {
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
-
 function isStrongPassword(password) {
   const hasMinLength = password.length >= 8;
   const hasUppercase = /[A-Z]/.test(password);
@@ -53,37 +28,8 @@ function isStrongPassword(password) {
 
   return hasMinLength && hasUppercase && hasLowercase && hasNumber;
 }
-
 function isAdminUser(user) {
   return user?.role?.toLowerCase() === "admin";
-}
-
-function displayNotificationType(type) {
-  if (type === "QUEUE_ALERT") return "Queue Alert";
-  if (type === "SLOT_REMINDER") return "Slot Reminder";
-  if (type === "GENERAL") return "General";
-  return type || "General";
-}
-
-function displayNotificationStatus(notification) {
-  return (
-    notification.status ||
-    notification.emailStatus ||
-    notification.smsStatus ||
-    "Not Available"
-  );
-}
-
-function getNotificationEmail(notification) {
-  return notification.recipientEmail || notification.email || "Not available";
-}
-
-function getNotificationPhone(notification) {
-  return notification.recipientPhone || notification.phone || "Not available";
-}
-
-function getNotificationError(notification) {
-  return notification.errorMessage || notification.error || "None";
 }
 
 export default function App() {
@@ -103,9 +49,6 @@ export default function App() {
   const [appointments, setAppointments] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [reports, setReports] = useState([]);
-
-  const [slotResults, setSlotResults] = useState([]);
-  const [activityResult, setActivityResult] = useState(null);
 
   const [visibleTokenCount, setVisibleTokenCount] = useState(10);
   const [visibleAppointmentCount, setVisibleAppointmentCount] = useState(12);
@@ -188,19 +131,9 @@ export default function App() {
 
   const [emailForm, setEmailForm] = useState({
     email: "",
-    phone: "",
     subject: "EQueue Notification",
     message: "Your queue or appointment update is available.",
-    type: "GENERAL",
-  });
-
-  const [queueAlertForm, setQueueAlertForm] = useState({
-    branchId: "",
-    date: today(),
-  });
-
-  const [appointmentReminderForm, setAppointmentReminderForm] = useState({
-    date: today(),
+    type: "General",
   });
 
   const [slotSearchForm, setSlotSearchForm] = useState({
@@ -253,8 +186,7 @@ export default function App() {
     if (isAdmin) return notifications;
 
     return notifications.filter((notification) => {
-      const email = getNotificationEmail(notification).toLowerCase();
-      return email === userEmail;
+      return notification.email?.toLowerCase() === userEmail;
     });
   }, [notifications, isAdmin, userEmail]);
 
@@ -268,11 +200,11 @@ export default function App() {
       });
 
       const waitingCount = branchTokens.filter(
-        (token) => token.status === "Waiting",
+        (token) => token.status === "Waiting"
       ).length;
 
       const servingCount = branchTokens.filter(
-        (token) => token.status === "Serving",
+        (token) => token.status === "Serving"
       ).length;
 
       const totalTokens = branchTokens.length;
@@ -295,7 +227,7 @@ export default function App() {
   const recentTokens = visibleTokensForUser.slice(0, visibleTokenCount);
   const recentAppointments = visibleAppointmentsForUser.slice(
     0,
-    visibleAppointmentCount,
+    visibleAppointmentCount
   );
   const recentReports = reports.slice(0, visibleReportCount);
 
@@ -364,7 +296,7 @@ export default function App() {
 
       if (authMode === "register" && !isStrongPassword(authForm.password)) {
         setMessage(
-          "Password must be at least 8 characters and include uppercase, lowercase, and number.",
+          "Password must be at least 8 characters and include uppercase, lowercase, and number."
         );
         return;
       }
@@ -399,8 +331,6 @@ export default function App() {
     setMessage("");
     setResult(null);
     setAnalyticsResult(null);
-    setSlotResults([]);
-    setActivityResult(null);
   }
 
   function getCoordinatesFromAddress(address) {
@@ -652,7 +582,7 @@ export default function App() {
         {
           preferredDate: rescheduleForm.preferredDate,
           timeSlot: rescheduleForm.timeSlot,
-        },
+        }
       );
 
       setResult({
@@ -682,7 +612,7 @@ export default function App() {
 
     try {
       const res = await api.get(
-        `/api/waiting/holiday/check?date=${holidayForm.date}&country=${holidayForm.country}`,
+        `/api/waiting/holiday/check?date=${holidayForm.date}&country=${holidayForm.country}`
       );
 
       setResult({
@@ -719,7 +649,7 @@ export default function App() {
 
     try {
       const res = await api.get(
-        `/api/waiting/${waitingForm.branchId}?waitingPeople=${waitingForm.waitingPeople}&averageServiceTime=${waitingForm.averageServiceTime}`,
+        `/api/waiting/${waitingForm.branchId}?waitingPeople=${waitingForm.waitingPeople}&averageServiceTime=${waitingForm.averageServiceTime}`
       );
 
       setResult({
@@ -741,7 +671,7 @@ export default function App() {
         `/api/queue/tokens/${queueStatusForm.tokenId}/status`,
         {
           status: queueStatusForm.status,
-        },
+        }
       );
 
       setResult({
@@ -763,49 +693,7 @@ export default function App() {
       const res = await api.post("/api/notifications/send", emailForm);
 
       setResult({
-        title: "Manual Notification Processed",
-        message: res.data.message,
-      });
-
-      setMessage(res.data.message);
-      await loadAll();
-    } catch (error) {
-      setMessage(showError(error));
-    }
-  }
-
-  async function sendQueueAlerts(event) {
-    event.preventDefault();
-
-    try {
-      const res = await api.post(
-        "/api/notifications/queue-alerts",
-        queueAlertForm,
-      );
-
-      setResult({
-        title: "Queue Alerts Processed",
-        message: res.data.message,
-      });
-
-      setMessage(res.data.message);
-      await loadAll();
-    } catch (error) {
-      setMessage(showError(error));
-    }
-  }
-
-  async function sendAppointmentReminders(event) {
-    event.preventDefault();
-
-    try {
-      const res = await api.post(
-        "/api/notifications/appointment-reminders",
-        appointmentReminderForm,
-      );
-
-      setResult({
-        title: "Appointment Reminders Processed",
+        title: "Notification Sent",
         message: res.data.message,
       });
 
@@ -833,13 +721,11 @@ export default function App() {
       const query = new URLSearchParams(slotSearchForm).toString();
       const res = await api.get(`/api/slots/search?${query}`);
 
-      setSlotResults(res.data);
-
       setResult({
         title: "Slot Search Completed",
         message:
           Array.isArray(res.data) && res.data.length > 0
-            ? `${res.data.length} branch result found.`
+            ? `${res.data.length} result found.`
             : "No available slot found.",
       });
 
@@ -855,13 +741,11 @@ export default function App() {
     try {
       const res = await api.get(`/api/activity?email=${activityEmail}`);
 
-      setActivityResult(res.data);
-
       setResult({
         title: "Activity History Loaded",
         message: `Tokens: ${res.data.tokens?.length || 0}, Appointments: ${
           res.data.appointments?.length || 0
-        }, Notifications: ${res.data.notifications?.length || 0}`,
+        }`,
       });
 
       setMessage("Citizen activity loaded");
@@ -1064,211 +948,6 @@ export default function App() {
     );
   }
 
-  function renderSlotResults() {
-    if (!slotResults || slotResults.length === 0) return null;
-
-    return (
-      <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Available Slot Search Results</h2>
-            <p>Booked slots are excluded. Queue length is shown for each branch.</p>
-          </div>
-
-          <button className="secondary-btn" onClick={() => setSlotResults([])}>
-            Clear Results
-          </button>
-        </div>
-
-        <div className="card-grid">
-          {slotResults.map((item) => (
-            <div className="mini-card" key={`${item.branchId}-${item.date}`}>
-              <h4>{item.branchName}</h4>
-              <p>Service: {item.serviceType}</p>
-              <p>Date: {item.date}</p>
-              <p>Current Queue Length: {item.queueLength}</p>
-
-              <h4>Available Slots</h4>
-
-              {item.availableSlots?.length > 0 ? (
-                <div className="button-row">
-                  {item.availableSlots.map((slot) => (
-                    <span className="badge" key={slot}>
-                      {slot}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p>No available slot for this branch.</p>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
-
-  function renderActivityHistory() {
-    if (!activityResult) return null;
-
-    const activityTokens = activityResult.tokens || [];
-    const activityAppointments = activityResult.appointments || [];
-    const activityNotifications = activityResult.notifications || [];
-
-    return (
-      <section className="section">
-        <div className="section-head">
-          <div>
-            <h2>Structured Citizen Activity History</h2>
-            <p>
-              Showing token, appointment, and notification history for{" "}
-              {activityResult.email}.
-            </p>
-          </div>
-
-          <button className="secondary-btn" onClick={() => setActivityResult(null)}>
-            Clear History
-          </button>
-        </div>
-
-        <h2>Token History</h2>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Token</th>
-                <th>Citizen</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Branch</th>
-                <th>Service</th>
-                <th>Date</th>
-                <th>Position</th>
-                <th>Waiting Time</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {activityTokens.length === 0 && (
-                <tr>
-                  <td colSpan="10">No token history found.</td>
-                </tr>
-              )}
-
-              {activityTokens.map((token) => (
-                <tr key={token._id}>
-                  <td>{token.tokenCode || token.tokenNumber}</td>
-                  <td>{token.name || token.citizenName}</td>
-                  <td>{token.email}</td>
-                  <td>{token.phone}</td>
-                  <td>{token.branch?.name || "Not available"}</td>
-                  <td>{token.service?.serviceName || token.service?.name || "Not available"}</td>
-                  <td>{token.preferredDate}</td>
-                  <td>{token.queuePosition || token.queueNumber}</td>
-                  <td>{token.estimatedWaitingTime || 0} min</td>
-                  <td>
-                    <span className="badge">{token.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2 style={{ marginTop: "24px" }}>Appointment History</h2>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Citizen</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Branch</th>
-                <th>Service</th>
-                <th>Date</th>
-                <th>Time Slot</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {activityAppointments.length === 0 && (
-                <tr>
-                  <td colSpan="8">No appointment history found.</td>
-                </tr>
-              )}
-
-              {activityAppointments.map((appointment) => (
-                <tr key={appointment._id}>
-                  <td>{appointment.name}</td>
-                  <td>{appointment.email}</td>
-                  <td>{appointment.phone}</td>
-                  <td>{appointment.branch?.name || "Not available"}</td>
-                  <td>
-                    {appointment.serviceType ||
-                      appointment.service?.serviceName ||
-                      appointment.service?.name ||
-                      "Not available"}
-                  </td>
-                  <td>{appointment.preferredDate}</td>
-                  <td>{appointment.timeSlot}</td>
-                  <td>
-                    <span className="badge">{appointment.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <h2 style={{ marginTop: "24px" }}>Notification History</h2>
-
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Channel</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Error</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {activityNotifications.length === 0 && (
-                <tr>
-                  <td colSpan="7">No notification history found.</td>
-                </tr>
-              )}
-
-              {activityNotifications.map((notification) => (
-                <tr key={notification._id}>
-                  <td>{displayNotificationType(notification.type)}</td>
-                  <td>{notification.channel || "EMAIL"}</td>
-                  <td>{getNotificationEmail(notification)}</td>
-                  <td>{getNotificationPhone(notification)}</td>
-                  <td>{notification.subject || "No subject"}</td>
-                  <td>
-                    <span className="badge">
-                      {displayNotificationStatus(notification)}
-                    </span>
-                  </td>
-                  <td>{getNotificationError(notification)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    );
-  }
-
   const navItems = [
     ["dashboard", "Dashboard"],
     ["branches", "Branch Setup"],
@@ -1446,13 +1125,13 @@ export default function App() {
                 </div>
 
                 <div className="mini-card">
-                  <h4>Jakia Notification Logic</h4>
-                  <p>Queue alerts for upcoming tokens and slot reminders within 1 hour.</p>
+                  <h4>Appointment Slots</h4>
+                  <p>Users book and reschedule appointments with availability filtering.</p>
                 </div>
 
                 <div className="mini-card">
-                  <h4>Activity and Slot Search</h4>
-                  <p>Citizens can see complete token, appointment, and notification history.</p>
+                  <h4>Analytics Layer</h4>
+                  <p>Admin monitors load comparison, least crowded branch, and reports.</p>
                 </div>
               </div>
             </section>
@@ -1483,11 +1162,11 @@ export default function App() {
 
                     {recentTokens.map((token, index) => (
                       <tr key={token._id}>
-                        <td>{token.tokenCode || token.tokenNumber || `Token-${index + 1}`}</td>
-                        <td>{token.name || token.citizenName || token.email || "Not available"}</td>
+                        <td>{token.tokenCode || `Token-${index + 1}`}</td>
+                        <td>{token.name || token.email || "Not available"}</td>
                         <td>{token.preferredDate || "Not available"}</td>
                         <td>{token.branch?.name || "Not available"}</td>
-                        <td>{token.service?.serviceName || token.service?.name || "Not available"}</td>
+                        <td>{token.service?.serviceName || "Not available"}</td>
                         <td>
                           <span className="badge">{token.status || "Unknown"}</span>
                         </td>
@@ -1552,33 +1231,21 @@ export default function App() {
                     }
                   />
 
-                  <select
+                  <input
+                    type="time"
                     value={branchForm.open}
                     onChange={(e) =>
                       setBranchForm({ ...branchForm, open: e.target.value })
                     }
-                  >
-                    <option value="">Opening time</option>
-                    {TIME_OPTIONS.map((time) => (
-                      <option key={time} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
+                  />
 
-                  <select
+                  <input
+                    type="time"
                     value={branchForm.close}
                     onChange={(e) =>
                       setBranchForm({ ...branchForm, close: e.target.value })
                     }
-                  >
-                    <option value="">Closing time</option>
-                    {TIME_OPTIONS.map((time) => (
-                      <option key={time} value={time}>
-                        {time}
-                      </option>
-                    ))}
-                  </select>
+                  />
 
                   <input
                     placeholder="Daily capacity"
@@ -1995,8 +1662,8 @@ export default function App() {
                       <option value="">Select token</option>
                       {tokens.map((token, index) => (
                         <option key={token._id} value={token._id}>
-                          {token.tokenCode || token.tokenNumber || `Token-${index + 1}`} |{" "}
-                          {token.name || token.citizenName || token.email || "Unknown"} | {token.status}
+                          {token.tokenCode || `Token-${index + 1}`} |{" "}
+                          {token.name || token.email || "Unknown"} | {token.status}
                         </option>
                       ))}
                     </select>
@@ -2047,12 +1714,12 @@ export default function App() {
 
                     {recentTokens.map((token, index) => (
                       <tr key={token._id}>
-                        <td>{token.tokenCode || token.tokenNumber || `Token-${index + 1}`}</td>
-                        <td>{token.name || token.citizenName || "Not available"}</td>
+                        <td>{token.tokenCode || `Token-${index + 1}`}</td>
+                        <td>{token.name || "Not available"}</td>
                         <td>{token.email || "Not available"}</td>
                         <td>{token.preferredDate || "Not available"}</td>
                         <td>{token.branch?.name || "Not available"}</td>
-                        <td>{token.service?.serviceName || token.service?.name || "Not available"}</td>
+                        <td>{token.service?.serviceName || "Not available"}</td>
                         <td>
                           <span className="badge">{token.status || "Unknown"}</span>
                         </td>
@@ -2137,381 +1804,263 @@ export default function App() {
         {activeModule === "appointments" && (
           <>
             <section className="section">
-              <div className="section-head">
-                <div>
-                  <h2>Appointments and Slot Management</h2>
-                  <p>
-                    Book appointments, search available slots, view full appointment records,
-                    and reschedule or cancel from one place.
-                  </p>
-                </div>
-              </div>
+              <h2>Appointment Booking</h2>
 
-              <div className="subsection-block">
-                <h2>Book Appointment</h2>
-                <p className="muted">
-                  Select branch, service, date, and a valid dropdown time slot.
-                </p>
+              <form onSubmit={createAppointment} className="form-grid">
+                <select
+                  value={appointmentForm.branchId}
+                  onChange={(e) =>
+                    setAppointmentForm({
+                      ...appointmentForm,
+                      branchId: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select branch</option>
+                  {activeBranches.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
 
-                <form onSubmit={createAppointment} className="form-grid">
-                  <select
-                    value={appointmentForm.branchId}
-                    onChange={(e) =>
-                      setAppointmentForm({
-                        ...appointmentForm,
-                        branchId: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select branch</option>
-                    {activeBranches.map((branch) => (
-                      <option key={branch._id} value={branch._id}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
+                <select
+                  value={appointmentForm.serviceId}
+                  onChange={(e) =>
+                    setAppointmentForm({
+                      ...appointmentForm,
+                      serviceId: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select service</option>
+                  {services.map((service) => (
+                    <option key={service._id} value={service._id}>
+                      {service.serviceName}
+                    </option>
+                  ))}
+                </select>
 
-                  <select
-                    value={appointmentForm.serviceId}
-                    onChange={(e) =>
-                      setAppointmentForm({
-                        ...appointmentForm,
-                        serviceId: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select service</option>
-                    {services.map((service) => (
-                      <option key={service._id} value={service._id}>
-                        {service.serviceName}
-                      </option>
-                    ))}
-                  </select>
+                <input
+                  type="date"
+                  value={appointmentForm.preferredDate}
+                  onChange={(e) =>
+                    setAppointmentForm({
+                      ...appointmentForm,
+                      preferredDate: e.target.value,
+                    })
+                  }
+                />
 
-                  <input
-                    type="date"
-                    value={appointmentForm.preferredDate}
-                    onChange={(e) =>
-                      setAppointmentForm({
-                        ...appointmentForm,
-                        preferredDate: e.target.value,
-                      })
-                    }
-                  />
+                <input
+                  placeholder="Time slot, example 09:00-10:00"
+                  value={appointmentForm.timeSlot}
+                  onChange={(e) =>
+                    setAppointmentForm({
+                      ...appointmentForm,
+                      timeSlot: e.target.value,
+                    })
+                  }
+                />
 
-                  <select
-                    value={appointmentForm.timeSlot}
-                    onChange={(e) =>
-                      setAppointmentForm({
-                        ...appointmentForm,
-                        timeSlot: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select time slot</option>
-                    {TIME_SLOT_OPTIONS.map((slot) => (
-                      <option key={slot} value={slot}>
-                        {slot}
-                      </option>
-                    ))}
-                  </select>
+                <input
+                  placeholder="Name"
+                  value={appointmentForm.name}
+                  onChange={(e) =>
+                    setAppointmentForm({ ...appointmentForm, name: e.target.value })
+                  }
+                />
 
-                  <input
-                    placeholder="Name"
-                    value={appointmentForm.name}
-                    onChange={(e) =>
-                      setAppointmentForm({ ...appointmentForm, name: e.target.value })
-                    }
-                  />
+                <input
+                  placeholder="Email"
+                  value={appointmentForm.email}
+                  onChange={(e) =>
+                    setAppointmentForm({ ...appointmentForm, email: e.target.value })
+                  }
+                />
 
-                  <input
-                    placeholder="Email"
-                    value={appointmentForm.email}
-                    onChange={(e) =>
-                      setAppointmentForm({ ...appointmentForm, email: e.target.value })
-                    }
-                  />
+                <input
+                  placeholder="Phone"
+                  value={appointmentForm.phone}
+                  onChange={(e) =>
+                    setAppointmentForm({ ...appointmentForm, phone: e.target.value })
+                  }
+                />
 
-                  <input
-                    placeholder="Phone"
-                    value={appointmentForm.phone}
-                    onChange={(e) =>
-                      setAppointmentForm({ ...appointmentForm, phone: e.target.value })
-                    }
-                  />
+                <button className="primary-btn" type="submit">
+                  Book Appointment
+                </button>
+              </form>
+            </section>
 
-                  <button className="primary-btn" type="submit">
-                    Book Appointment
-                  </button>
-                </form>
-              </div>
+            <section className="section">
+              <h2>Available Slot Search</h2>
 
-              <div className="subsection-block">
-                <h2>Advanced Slot Search and Filtering</h2>
-                <p className="muted">
-                  Search by branch, service type, date, optional time slot, and maximum queue length.
-                </p>
+              <form onSubmit={searchSlots} className="form-grid">
+                <select
+                  value={slotSearchForm.branchId}
+                  onChange={(e) =>
+                    setSlotSearchForm({
+                      ...slotSearchForm,
+                      branchId: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">All active branches</option>
+                  {activeBranches.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
 
-                <form onSubmit={searchSlots} className="form-grid">
-                  <select
-                    value={slotSearchForm.branchId}
-                    onChange={(e) =>
-                      setSlotSearchForm({
-                        ...slotSearchForm,
-                        branchId: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">All active branches</option>
-                    {activeBranches.map((branch) => (
-                      <option key={branch._id} value={branch._id}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
+                <select
+                  value={slotSearchForm.serviceType}
+                  onChange={(e) =>
+                    setSlotSearchForm({
+                      ...slotSearchForm,
+                      serviceType: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select service type</option>
+                  {services.map((service) => (
+                    <option key={service._id} value={service.serviceName}>
+                      {service.serviceName}
+                    </option>
+                  ))}
+                </select>
 
-                  <select
-                    value={slotSearchForm.serviceType}
-                    onChange={(e) =>
-                      setSlotSearchForm({
-                        ...slotSearchForm,
-                        serviceType: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select service type</option>
-                    {services.map((service) => (
-                      <option key={service._id} value={service.serviceName}>
-                        {service.serviceName}
-                      </option>
-                    ))}
-                  </select>
+                <input
+                  type="date"
+                  value={slotSearchForm.date}
+                  onChange={(e) =>
+                    setSlotSearchForm({ ...slotSearchForm, date: e.target.value })
+                  }
+                />
 
-                  <input
-                    type="date"
-                    value={slotSearchForm.date}
-                    onChange={(e) =>
-                      setSlotSearchForm({ ...slotSearchForm, date: e.target.value })
-                    }
-                  />
+                <input
+                  placeholder="Time slot optional"
+                  value={slotSearchForm.timeSlot}
+                  onChange={(e) =>
+                    setSlotSearchForm({
+                      ...slotSearchForm,
+                      timeSlot: e.target.value,
+                    })
+                  }
+                />
 
-                  <select
-                    value={slotSearchForm.timeSlot}
-                    onChange={(e) =>
-                      setSlotSearchForm({
-                        ...slotSearchForm,
-                        timeSlot: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">All available slots</option>
-                    {TIME_SLOT_OPTIONS.map((slot) => (
-                      <option key={slot} value={slot}>
-                        {slot}
-                      </option>
-                    ))}
-                  </select>
+                <input
+                  placeholder="Maximum queue length optional"
+                  value={slotSearchForm.maxQueueLength}
+                  onChange={(e) =>
+                    setSlotSearchForm({
+                      ...slotSearchForm,
+                      maxQueueLength: e.target.value,
+                    })
+                  }
+                />
 
-                  <input
-                    placeholder="Maximum queue length optional"
-                    value={slotSearchForm.maxQueueLength}
-                    onChange={(e) =>
-                      setSlotSearchForm({
-                        ...slotSearchForm,
-                        maxQueueLength: e.target.value,
-                      })
-                    }
-                  />
+                <button className="primary-btn" type="submit">
+                  Search Slots
+                </button>
+              </form>
+            </section>
 
-                  <button className="primary-btn" type="submit">
-                    Search Slots
-                  </button>
-                </form>
+            <section className="section">
+              <h2>{isAdmin ? "Appointment Records" : "My Appointments"}</h2>
 
-                {slotResults && slotResults.length > 0 && (
-                  <div className="inline-result-panel">
-                    <div className="section-head compact-head">
-                      <div>
-                        <h2>Available Slot Results</h2>
-                        <p>Booked slots are excluded. Queue length is shown for each branch.</p>
-                      </div>
+              <form onSubmit={rescheduleAppointment} className="form-grid">
+                <select
+                  value={rescheduleForm.appointmentId}
+                  onChange={(e) =>
+                    setRescheduleForm({
+                      ...rescheduleForm,
+                      appointmentId: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select appointment</option>
+                  {visibleAppointmentsForUser.map((appointment) => (
+                    <option key={appointment._id} value={appointment._id}>
+                      {appointment.name} | {appointment.serviceType} |{" "}
+                      {appointment.preferredDate} | {appointment.timeSlot} |{" "}
+                      {appointment.status}
+                    </option>
+                  ))}
+                </select>
 
-                      <button className="secondary-btn" onClick={() => setSlotResults([])}>
-                        Clear Results
+                <input
+                  type="date"
+                  value={rescheduleForm.preferredDate}
+                  onChange={(e) =>
+                    setRescheduleForm({
+                      ...rescheduleForm,
+                      preferredDate: e.target.value,
+                    })
+                  }
+                />
+
+                <input
+                  placeholder="New time slot"
+                  value={rescheduleForm.timeSlot}
+                  onChange={(e) =>
+                    setRescheduleForm({
+                      ...rescheduleForm,
+                      timeSlot: e.target.value,
+                    })
+                  }
+                />
+
+                <button className="primary-btn" type="submit">
+                  Reschedule
+                </button>
+              </form>
+
+              <div className="card-grid">
+                {recentAppointments.map((appointment) => (
+                  <div className="mini-card" key={appointment._id}>
+                    <h4>{appointment.name || "No name"}</h4>
+                    <p>{appointment.serviceType || appointment.service?.serviceName}</p>
+                    <p>
+                      {appointment.preferredDate} | {appointment.timeSlot}
+                    </p>
+                    <p>{appointment.branch?.name || "Branch not available"}</p>
+                    <span className="badge">{appointment.status}</span>
+
+                    <div className="button-row">
+                      <button
+                        className="danger-btn mini"
+                        onClick={() => cancelAppointment(appointment._id)}
+                      >
+                        Cancel
                       </button>
-                    </div>
 
-                    <div className="card-grid">
-                      {slotResults.map((item) => (
-                        <div className="mini-card" key={`${item.branchId}-${item.date}`}>
-                          <h4>{item.branchName}</h4>
-                          <p>Service: {item.serviceType}</p>
-                          <p>Date: {item.date}</p>
-                          <p>Current Queue Length: {item.queueLength}</p>
-
-                          <h4>Available Slots</h4>
-                          {item.availableSlots?.length > 0 ? (
-                            <div className="button-row">
-                              {item.availableSlots.map((slot) => (
-                                <span className="badge" key={slot}>
-                                  {slot}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <p>No available slot for this branch.</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="subsection-block">
-                <h2>{isAdmin ? "Appointment Records" : "My Appointment Records"}</h2>
-                <p className="muted">
-                  Full appointment information is shown here, including citizen contact, branch,
-                  service, date, slot, and status.
-                </p>
-
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Branch</th>
-                        <th>Service</th>
-                        <th>Date</th>
-                        <th>Time Slot</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {recentAppointments.length === 0 && (
-                        <tr>
-                          <td colSpan="9">No appointment records found.</td>
-                        </tr>
+                      {isAdmin && (
+                        <button
+                          className="danger-btn mini"
+                          onClick={() => deleteAppointmentRecord(appointment._id)}
+                        >
+                          Delete
+                        </button>
                       )}
-
-                      {recentAppointments.map((appointment) => (
-                        <tr key={appointment._id}>
-                          <td>{appointment.name || "Not available"}</td>
-                          <td>{appointment.email || "Not available"}</td>
-                          <td>{appointment.phone || "Not available"}</td>
-                          <td>{appointment.branch?.name || "Not available"}</td>
-                          <td>
-                            {appointment.serviceType ||
-                              appointment.service?.serviceName ||
-                              appointment.service?.name ||
-                              "Not available"}
-                          </td>
-                          <td>{appointment.preferredDate || "Not available"}</td>
-                          <td>{appointment.timeSlot || "Not available"}</td>
-                          <td>
-                            <span className="badge">
-                              {appointment.status || "Unknown"}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              className="danger-btn mini"
-                              onClick={() => cancelAppointment(appointment._id)}
-                            >
-                              Cancel
-                            </button>
-                            {isAdmin && (
-                              <button
-                                className="danger-btn mini"
-                                onClick={() => deleteAppointmentRecord(appointment._id)}
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {visibleAppointmentsForUser.length > visibleAppointmentCount && (
-                  <div className="table-footer">
-                    <button
-                      className="secondary-btn"
-                      onClick={() =>
-                        setVisibleAppointmentCount(visibleAppointmentCount + 12)
-                      }
-                    >
-                      Show More Appointments
-                    </button>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
 
-              <div className="subsection-block">
-                <h2>Reschedule Selected Appointment</h2>
-                <p className="muted">
-                  Choose an appointment record, then select a new date and valid time slot.
-                </p>
-
-                <form onSubmit={rescheduleAppointment} className="form-grid">
-                  <select
-                    value={rescheduleForm.appointmentId}
-                    onChange={(e) =>
-                      setRescheduleForm({
-                        ...rescheduleForm,
-                        appointmentId: e.target.value,
-                      })
+              {visibleAppointmentsForUser.length > visibleAppointmentCount && (
+                <div className="table-footer">
+                  <button
+                    className="secondary-btn"
+                    onClick={() =>
+                      setVisibleAppointmentCount(visibleAppointmentCount + 12)
                     }
                   >
-                    <option value="">Select appointment</option>
-                    {visibleAppointmentsForUser.map((appointment) => (
-                      <option key={appointment._id} value={appointment._id}>
-                        {appointment.name || "No name"} | {appointment.email || "No email"} |{" "}
-                        {appointment.serviceType || appointment.service?.serviceName || "No service"} |{" "}
-                        {appointment.preferredDate} | {appointment.timeSlot} | {appointment.status}
-                      </option>
-                    ))}
-                  </select>
-
-                  <input
-                    type="date"
-                    value={rescheduleForm.preferredDate}
-                    onChange={(e) =>
-                      setRescheduleForm({
-                        ...rescheduleForm,
-                        preferredDate: e.target.value,
-                      })
-                    }
-                  />
-
-                  <select
-                    value={rescheduleForm.timeSlot}
-                    onChange={(e) =>
-                      setRescheduleForm({
-                        ...rescheduleForm,
-                        timeSlot: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Select new time slot</option>
-                    {TIME_SLOT_OPTIONS.map((slot) => (
-                      <option key={slot} value={slot}>
-                        {slot}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button className="primary-btn" type="submit">
-                    Reschedule
+                    Show More Appointments
                   </button>
-                </form>
-              </div>
+                </div>
+              )}
             </section>
 
             {renderResultPanel()}
@@ -2525,119 +2074,48 @@ export default function App() {
 
               <div className="two-column">
                 {isAdmin && (
-                  <>
-                    <form onSubmit={sendQueueAlerts} className="mini-card">
-                      <h4>Autogenerated Queue Alert</h4>
-                      <p>
-                        Sends email and simulated SMS to the first/upcoming 3 waiting tokens.
-                      </p>
+                  <form onSubmit={sendEmail} className="mini-card">
+                    <h4>Send Email Notification</h4>
 
-                      <select
-                        value={queueAlertForm.branchId}
-                        onChange={(e) =>
-                          setQueueAlertForm({
-                            ...queueAlertForm,
-                            branchId: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Select branch</option>
-                        {branches.map((branch) => (
-                          <option key={branch._id} value={branch._id}>
-                            {branch.name}
-                          </option>
-                        ))}
-                      </select>
+                    <input
+                      placeholder="Recipient email"
+                      value={emailForm.email}
+                      onChange={(e) =>
+                        setEmailForm({ ...emailForm, email: e.target.value })
+                      }
+                    />
 
-                      <input
-                        type="date"
-                        value={queueAlertForm.date}
-                        onChange={(e) =>
-                          setQueueAlertForm({
-                            ...queueAlertForm,
-                            date: e.target.value,
-                          })
-                        }
-                      />
+                    <select
+                      value={emailForm.type}
+                      onChange={(e) =>
+                        setEmailForm({ ...emailForm, type: e.target.value })
+                      }
+                    >
+                      <option value="General">General</option>
+                      <option value="Queue Alert">Queue Alert</option>
+                      <option value="Appointment Reminder">Appointment Reminder</option>
+                    </select>
 
-                      <button className="primary-btn" type="submit">
-                        Send Queue Alerts
-                      </button>
-                    </form>
+                    <input
+                      placeholder="Subject"
+                      value={emailForm.subject}
+                      onChange={(e) =>
+                        setEmailForm({ ...emailForm, subject: e.target.value })
+                      }
+                    />
 
-                    <form onSubmit={sendAppointmentReminders} className="mini-card">
-                      <h4>Autogenerated Appointment Reminder</h4>
-                      <p>
-                        Sends reminders for confirmed appointments whose slot starts within 1 hour.
-                      </p>
+                    <textarea
+                      placeholder="Message"
+                      value={emailForm.message}
+                      onChange={(e) =>
+                        setEmailForm({ ...emailForm, message: e.target.value })
+                      }
+                    />
 
-                      <input
-                        type="date"
-                        value={appointmentReminderForm.date}
-                        onChange={(e) =>
-                          setAppointmentReminderForm({
-                            ...appointmentReminderForm,
-                            date: e.target.value,
-                          })
-                        }
-                      />
-
-                      <button className="success-btn" type="submit">
-                        Send Appointment Reminders
-                      </button>
-                    </form>
-
-                    <form onSubmit={sendEmail} className="mini-card">
-                      <h4>Manual Email or SMS Test</h4>
-
-                      <input
-                        placeholder="Recipient email"
-                        value={emailForm.email}
-                        onChange={(e) =>
-                          setEmailForm({ ...emailForm, email: e.target.value })
-                        }
-                      />
-
-                      <input
-                        placeholder="Phone optional"
-                        value={emailForm.phone}
-                        onChange={(e) =>
-                          setEmailForm({ ...emailForm, phone: e.target.value })
-                        }
-                      />
-
-                      <select
-                        value={emailForm.type}
-                        onChange={(e) =>
-                          setEmailForm({ ...emailForm, type: e.target.value })
-                        }
-                      >
-                        <option value="GENERAL">General</option>
-                        <option value="QUEUE_ALERT">Queue Alert</option>
-                        <option value="SLOT_REMINDER">Slot Reminder</option>
-                      </select>
-
-                      <input
-                        placeholder="Subject"
-                        value={emailForm.subject}
-                        onChange={(e) =>
-                          setEmailForm({ ...emailForm, subject: e.target.value })
-                        }
-                      />
-
-                      <textarea
-                        placeholder="Message"
-                        value={emailForm.message}
-                        onChange={(e) =>
-                          setEmailForm({ ...emailForm, message: e.target.value })
-                        }
-                      />
-
-                      <button className="primary-btn" type="submit">
-                        Send Manual Notification
-                      </button>
-                    </form>
-                  </>
+                    <button className="primary-btn" type="submit">
+                      Send Email
+                    </button>
+                  </form>
                 )}
 
                 <form onSubmit={loadActivity} className="mini-card">
@@ -2658,16 +2136,10 @@ export default function App() {
               <div className="card-grid">
                 {visibleNotificationsForUser.slice(0, 8).map((notification) => (
                   <div className="mini-card" key={notification._id}>
-                    <h4>{notification.subject || displayNotificationType(notification.type)}</h4>
-                    <p>{getNotificationEmail(notification)}</p>
+                    <h4>{notification.subject}</h4>
+                    <p>{notification.email}</p>
                     <p>{notification.message}</p>
-                    <span className="badge">
-                      {notification.channel || "EMAIL"}: {displayNotificationStatus(notification)}
-                    </span>
-
-                    {getNotificationError(notification) !== "None" && (
-                      <p>Error: {getNotificationError(notification)}</p>
-                    )}
+                    <span className="badge">{notification.status}</span>
 
                     {isAdmin && (
                       <div className="button-row">
@@ -2684,7 +2156,6 @@ export default function App() {
               </div>
             </section>
 
-            {renderActivityHistory()}
             {renderResultPanel()}
           </>
         )}
@@ -2817,3 +2288,878 @@ export default function App() {
     </div>
   );
 }
+===== frontend/src/App.css =====
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #eef3fb;
+  --panel: #ffffff;
+  --ink: #111827;
+  --muted: #64748b;
+  --line: #d8e0ec;
+  --blue: #123c69;
+  --blue2: #2563eb;
+  --cyan: #0ea5e9;
+  --green: #0f9f6e;
+  --red: #dc2626;
+  --dark: #07111f;
+  --shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 30%),
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 28%),
+    var(--bg);
+  color: var(--ink);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+/* LOGIN */
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.23), transparent 28%),
+    linear-gradient(135deg, #07111f, #102033);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 32px;
+  border-radius: 22px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.auth-logo {
+  width: 96px;
+  height: 62px;
+  object-fit: contain;
+  transform: scale(2.25);
+  transform-origin: center;
+}
+
+
+.auth-brand p {
+  margin: 5px 0 0;
+  color: var(--muted);
+}
+
+.auth-card h2 {
+  margin: 0 0 8px;
+}
+
+/* HEADER */
+
+.header {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+  padding: 16px 34px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* LOGO SIZE CONTROL:
+   Change width/height here to adjust the space the logo uses in header. */
+.brand-logo {
+  width: 118px;
+  height: 58px;
+  object-fit: contain;
+
+  /* LOGO ZOOM CONTROL:
+     Increase scale to make the actual transparent logo text/icon bigger. */
+  transform: scale(2.45);
+  transform-origin: center;
+}
+
+
+.brand-block p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.user-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: right;
+}
+
+.user-block strong {
+  display: block;
+  color: #07111f;
+  font-size: 15px;
+}
+
+.user-block span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* TOP NAV */
+
+.top-nav {
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 34px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.top-nav-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #26364d;
+  padding: 10px 14px;
+  border-radius: 11px;
+  font-weight: 900;
+}
+
+.top-nav-btn:hover {
+  background: #eaf1fa;
+}
+
+.top-nav-btn.active {
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: white;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+}
+
+/* MAIN */
+
+.page {
+  width: min(94vw, 1460px);
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.hero-panel {
+  background:
+    linear-gradient(135deg, rgba(7, 17, 31, 0.98), rgba(18, 60, 105, 0.96)),
+    #102033;
+  color: white;
+  border-radius: 26px;
+  padding: 34px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: center;
+  box-shadow: 0 28px 75px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+  position: relative;
+}
+
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -80px;
+  top: -90px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.38), transparent 66%);
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
+.eyebrow {
+  display: inline-block;
+  color: #bae6fd;
+  background: rgba(14, 165, 233, 0.18);
+  border: 1px solid rgba(186, 230, 253, 0.25);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+
+
+.hero-panel p {
+  margin: 13px 0 0;
+  max-width: 880px;
+  color: #cbd5e1;
+  line-height: 1.55;
+  font-size: 16px;
+}
+
+.stat-grid {
+  min-width: 330px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  padding: 17px;
+  text-align: center;
+}
+
+.stat-card span {
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 7px;
+  color: white;
+  font-size: 29px;
+}
+
+/* SECTIONS */
+
+.section {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 26px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.section h2 {
+  margin: 0 0 8px;
+  color: #07111f;
+  font-size: 23px;
+  letter-spacing: -0.4px;
+}
+
+.section p,
+.section-head p,
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.form-grid.one {
+  grid-template-columns: 1fr;
+}
+
+.form-wide {
+  grid-column: 1 / -1;
+}
+
+.two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  padding: 12px 13px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #07111f;
+  font-size: 14px;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.16);
+}
+
+input[readonly] {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+textarea {
+  min-height: 94px;
+  resize: vertical;
+}
+
+/* BUTTONS */
+
+.primary-btn,
+.secondary-btn,
+.danger-btn,
+.success-btn,
+.dark-btn,
+.soft-btn {
+  border: none;
+  padding: 11px 15px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, var(--cyan), var(--blue2));
+  color: white;
+}
+
+.secondary-btn,
+.soft-btn {
+  background: #e8eef7;
+  color: #102033;
+  border: 1px solid #cbd5e1;
+}
+
+.danger-btn {
+  background: var(--red);
+  color: white;
+}
+
+.success-btn {
+  background: var(--green);
+  color: white;
+}
+
+.dark-btn {
+  background: #102033;
+  color: white;
+}
+
+.mini {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+/* CARDS */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 15px;
+  margin-top: 16px;
+}
+
+.mini-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+  min-height: 120px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mini-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.branch-card {
+  border-left: 4px solid var(--cyan);
+}
+
+.accent-card {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.mini-card h4 {
+  margin: 0 0 8px;
+  color: #07111f;
+  font-size: 16px;
+}
+
+.mini-card p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: #e0f2fe;
+  color: #075985;
+  text-transform: capitalize;
+}
+
+/* NOTICE AND RESULT */
+
+.notice {
+  background: #e0f2fe;
+  color: #075985;
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--cyan);
+  border-radius: 16px;
+  padding: 13px 15px;
+  margin-bottom: 18px;
+  font-weight: 800;
+}
+
+.notice.compact {
+  margin-top: 14px;
+}
+
+.notice.subtle {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.result-card {
+  background:
+    linear-gradient(135deg, rgba(7, 17, 31, 0.96), rgba(14, 165, 233, 0.82));
+  color: white;
+  border-radius: 22px;
+  padding: 22px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+
+.result-card span {
+  color: #bae6fd;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.result-card h2 {
+  margin: 6px 0;
+}
+
+.result-card p {
+  margin: 0;
+  color: #e0f2fe;
+}
+
+/* TABLE */
+
+.table-wrap {
+  overflow: auto;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  max-height: 520px;
+  background: white;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  border-bottom: 1px solid #edf2f7;
+  text-align: left;
+  padding: 12px 14px;
+  vertical-align: top;
+}
+
+th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 900;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+tr:hover td {
+  background: #f8fbff;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+/* MAP */
+
+.map-box {
+  width: 100%;
+  height: 430px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-top: 14px;
+  box-shadow: var(--shadow);
+}
+
+.map-info {
+  min-width: 210px;
+  color: #102033;
+}
+
+.map-info h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.map-info p {
+  margin: 5px 0;
+  font-size: 13px;
+}
+
+.branch-map-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.branch-map-item {
+  text-align: left;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 16px;
+  padding: 13px;
+}
+
+.branch-map-item strong {
+  display: block;
+  color: #07111f;
+  font-size: 14px;
+}
+
+.branch-map-item span {
+  display: inline-block;
+  margin: 6px 0;
+  color: #0369a1;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.branch-map-item small {
+  display: block;
+  color: var(--muted);
+}
+
+.empty-state {
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  color: var(--muted);
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+  font-weight: 800;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1000px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-block {
+    width: 100%;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .hero-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stat-grid {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .form-grid,
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-logo {
+    width: 92px;
+    height: 48px;
+    transform: scale(2.15);
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    width: 100%;
+    padding: 18px;
+  }
+
+  .top-nav {
+    padding: 12px 18px;
+  }
+
+  .top-nav-btn {
+    width: 100%;
+    text-align: left;
+  }
+
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+===== frontend/src/index.css =====
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f6fb;
+  color: #1f2937;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+===== frontend/src/components/BranchMap.jsx =====
+import { useMemo, useState } from "react";
+import {
+  GoogleMap,
+  Marker,
+  InfoWindow,
+  useJsApiLoader,
+} from "@react-google-maps/api";
+
+export default function BranchMap({ branches }) {
+  const [selectedBranch, setSelectedBranch] = useState(null);
+
+  const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: googleMapsKey,
+  });
+
+  const validBranches = useMemo(() => {
+    return branches.filter((branch) => {
+      const lat = Number(branch.latitude);
+      const lng = Number(branch.longitude);
+      return !Number.isNaN(lat) && !Number.isNaN(lng);
+    });
+  }, [branches]);
+
+  if (!googleMapsKey) {
+    return (
+      <p className="muted">
+        Add VITE_GOOGLE_MAPS_API_KEY in frontend/.env to show Google Maps.
+      </p>
+    );
+  }
+
+  if (!isLoaded) {
+    return <p className="muted">Loading map...</p>;
+  }
+
+  if (validBranches.length === 0) {
+    return (
+      <div className="empty-state">
+        No branch has valid latitude and longitude yet.
+      </div>
+    );
+  }
+
+  const center = {
+    lat: Number(validBranches[0].latitude),
+    lng: Number(validBranches[0].longitude),
+  };
+
+  return (
+    <>
+      <div className="map-box">
+        <GoogleMap
+          center={center}
+          zoom={11}
+          mapContainerStyle={{ width: "100%", height: "100%" }}
+        >
+          {validBranches.map((branch) => (
+            <Marker
+              key={branch._id}
+              position={{
+                lat: Number(branch.latitude),
+                lng: Number(branch.longitude),
+              }}
+              title={branch.name}
+              label={{
+                text: branch.name.charAt(0).toUpperCase(),
+                color: "white",
+                fontWeight: "700",
+              }}
+              onClick={() => setSelectedBranch(branch)}
+            />
+          ))}
+
+          {selectedBranch && (
+            <InfoWindow
+              position={{
+                lat: Number(selectedBranch.latitude),
+                lng: Number(selectedBranch.longitude),
+              }}
+              onCloseClick={() => setSelectedBranch(null)}
+            >
+              <div className="map-info">
+                <h3>{selectedBranch.name}</h3>
+                <p>{selectedBranch.address}</p>
+                <p>
+                  <strong>Status:</strong> {selectedBranch.status}
+                </p>
+                <p>
+                  <strong>Capacity:</strong> {selectedBranch.dailyCapacity}
+                </p>
+                <p>
+                  <strong>Waiting:</strong> {selectedBranch.waitingCount || 0}
+                </p>
+                <p>
+                  <strong>Total Tokens:</strong> {selectedBranch.totalTokens || 0}
+                </p>
+                <p>
+                  <strong>Queue Load:</strong> {selectedBranch.loadPercentage || 0}%
+                </p>
+              </div>
+            </InfoWindow>
+          )}
+        </GoogleMap>
+      </div>
+
+      <div className="branch-map-list">
+        {validBranches.map((branch) => (
+          <button
+            key={branch._id}
+            className="branch-map-item"
+            onClick={() => setSelectedBranch(branch)}
+          >
+            <strong>{branch.name}</strong>
+            <span>{branch.status}</span>
+            <small>
+              Waiting: {branch.waitingCount || 0} | Load:{" "}
+              {branch.loadPercentage || 0}%
+            </small>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+===== frontend package.json =====
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
+    "axios": "^1.16.0",
+    "pusher-js": "^8.5.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "vite": "^8.0.4"
+  }
+}
+
+===== frontend vite.config.js =====
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})

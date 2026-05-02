@@ -2,11 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  compareBranches,
-  leastCrowdedBranch,
+  compareBranchLoad,
+  getLeastCrowdedBranch,
+  getHistoricalQueueTrends,
 } = require("../controllers/analyticsController");
 
-router.get("/compare", compareBranches);
-router.get("/least-crowded", leastCrowdedBranch);
+router.get("/compare", compareBranchLoad);
+router.get("/least-crowded", getLeastCrowdedBranch);
+router.get("/history", getHistoricalQueueTrends);
 
 module.exports = router;

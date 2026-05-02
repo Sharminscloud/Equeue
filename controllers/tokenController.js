@@ -1,100 +1,201 @@
-const Branch = require("../models/Branch");
-const Service = require("../models/service");
 const Token = require("../models/Token");
+const Branch = require("../models/Branch");
+const Service = require("../models/Service");
 const QueueDay = require("../models/QueueDay");
-const { formatTokenNumber } = require("../utils/tokenGenerator");
+const { generateTokenCode } = require("../utils/tokenGenerator");
 
-const getBranches = async (req, res) => {
+async function getTokens(req, res) {
   try {
-    const branches = await Branch.find().sort({ name: 1 });
-    res.json(branches);
+    const filter = {};
+
+    if (req.query.branchId) {
+      filter.branch = req.query.branchId;
+    }
+
+    if (req.query.serviceId) {
+      filter.service = req.query.serviceId;
+    }
+
+    if (req.query.date) {
+      filter.preferredDate = req.query.date;
+    }
+
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+
+    if (req.query.email) {
+      filter.email = req.query.email.toLowerCase();
+    }
+
+    const tokens = await Token.find(filter)
+      .populate("branch")
+      .populate("service")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(tokens);
   } catch (error) {
-    console.error("Get branches error:", error);
-    res.status(500).json({ message: "Failed to load branches" });
+    res.status(500).json({
+      message: "Failed to fetch tokens",
+      error: error.message,
+    });
   }
-};
+}
 
-const getServices = async (req, res) => {
+async function createToken(req, res) {
   try {
-    const services = await Service.find().sort({ name: 1 });
-    res.json(services);
-  } catch (error) {
-    console.error("Get services error:", error);
-    res.status(500).json({ message: "Failed to load services" });
-  }
-};
-
-const createToken = async (req, res) => {
-  try {
-    // [23301695] JAKIA — added citizenName, email, phone for notifications
     const {
       branchId,
       serviceId,
       preferredDate,
-      isPriority,
+      name,
       citizenName,
       email,
       phone,
+      isPriority,
     } = req.body;
 
-    if (!branchId || !serviceId || !preferredDate) {
+    const finalName = name || citizenName || "";
+
+    if (
+      !branchId ||
+      !serviceId ||
+      !preferredDate ||
+      !finalName ||
+      !email ||
+      !phone
+    ) {
       return res.status(400).json({
-        message: "branchId, serviceId and preferredDate are required",
+        message:
+          "branchId, serviceId, preferredDate, name, email, and phone are required",
       });
     }
 
     const branch = await Branch.findById(branchId);
+
     if (!branch) {
-      return res.status(404).json({ message: "Branch not found" });
+      return res.status(404).json({
+        message: "Branch not found",
+      });
+    }
+
+    if (branch.status !== "Active") {
+      return res.status(400).json({
+        message: `Token cannot be created because branch is ${branch.status}`,
+      });
     }
 
     const service = await Service.findById(serviceId);
+
     if (!service) {
-      return res.status(404).json({ message: "Service not found" });
+      return res.status(404).json({
+        message: "Service not found",
+      });
     }
 
-    const queueDay = await QueueDay.findOneAndUpdate(
-      {
-        preferredDate,
-        branch: branchId,
-        service: serviceId,
-        isPriority: !!isPriority,
-      },
-      { $inc: { lastNumber: 1 } },
-      { new: true, upsert: true },
-    );
-
-    const queueNumber = queueDay.lastNumber;
-    const tokenNumber = formatTokenNumber({
-      isPriority: !!isPriority,
-      queueNumber,
+    const activeTokenCount = await Token.countDocuments({
+      branch: branchId,
+      preferredDate,
+      status: { $ne: "Cancelled" },
     });
 
-    const token = await Token.create({
-      tokenNumber,
+    if (activeTokenCount >= branch.dailyCapacity) {
+      return res.status(400).json({
+        message: "Daily capacity is full for this branch and date",
+      });
+    }
+
+    const sameTypeIssuedCount = await Token.countDocuments({
       branch: branchId,
       service: serviceId,
       preferredDate,
-      isPriority: !!isPriority,
-      queueNumber,
-      // [23301695] JAKIA — her fields for notification system
-      citizenName: citizenName || "",
-      email: email || "",
-      phone: phone || "",
+      isPriority: Boolean(isPriority),
     });
 
-    const populatedToken = await Token.findById(token._id)
-      .populate("branch", "name")
-      .populate("service", "name");
+    const queueNumber = sameTypeIssuedCount + 1;
+    const tokenNumber = queueNumber;
+    const tokenCode = generateTokenCode(Boolean(isPriority), queueNumber);
+
+    const waitingCount = await Token.countDocuments({
+      branch: branchId,
+      preferredDate,
+      status: "Waiting",
+    });
+
+    const queuePosition = waitingCount + 1;
+
+    const estimatedWaitingTime = Math.ceil(
+      (waitingCount / branch.activeCounters) * service.averageProcessingTime,
+    );
+
+    const token = await Token.create({
+      branch: branchId,
+      service: serviceId,
+      preferredDate,
+      name: finalName,
+      citizenName: finalName,
+      email: email.toLowerCase(),
+      phone,
+      isPriority: Boolean(isPriority),
+      queueNumber,
+      tokenNumber,
+      tokenCode,
+      queuePosition,
+      estimatedWaitingTime,
+      status: "Waiting",
+      queueAlertSent: false,
+    });
+
+    await QueueDay.findOneAndUpdate(
+      { branch: branchId, date: preferredDate },
+      {
+        $inc: {
+          totalTokens: 1,
+          waitingCount: 1,
+        },
+      },
+      { upsert: true, new: true },
+    );
+
+    const savedToken = await Token.findById(token._id)
+      .populate("branch")
+      .populate("service");
 
     res.status(201).json({
-      message: "Token created successfully",
-      token: populatedToken,
+      message: "Token generated successfully",
+      token: savedToken,
     });
   } catch (error) {
-    console.error("Create token error:", error);
-    res.status(500).json({ message: "Failed to create token" });
+    res.status(400).json({
+      message: "Failed to generate token",
+      error: error.message,
+    });
   }
-};
+}
 
-module.exports = { getBranches, getServices, createToken };
+async function deleteToken(req, res) {
+  try {
+    const token = await Token.findByIdAndDelete(req.params.id);
+
+    if (!token) {
+      return res.status(404).json({
+        message: "Token not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Token deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete token",
+      error: error.message,
+    });
+  }
+}
+
+module.exports = {
+  getTokens,
+  createToken,
+  deleteToken,
+};

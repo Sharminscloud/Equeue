@@ -1,123 +1,125 @@
 const Branch = require("../models/Branch");
 const Token = require("../models/Token");
-const Appointment = require("../models/Appointment");
 
-const getTodayRange = () => {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-
-  return { start, end };
-};
-
-const getBranchWaitingCount = async (branchId) => {
-  const { start, end } = getTodayRange();
-
-  return Token.countDocuments({
-    branch: branchId,
-    status: { $in: ["Waiting", "Serving"] },
-    issuedAt: { $gte: start, $lte: end },
-  });
-};
-
-const getBranchAppointmentCount = async (branchId) => {
-  return Appointment.countDocuments({
-    branch: branchId,
-    status: { $in: ["Confirmed", "Rescheduled", "In-Progress", "Served"] },
-  });
-};
-
-const buildBranchAnalytics = async (branch) => {
-  const waiting = await getBranchWaitingCount(branch._id);
-  const appointments = await getBranchAppointmentCount(branch._id);
-
-  const activeCounters = Number(branch.activeCounters || 1);
-  const estimatedWaitMinutes = Math.ceil((waiting * 15) / activeCounters);
-
-  let crowdLevel = "Low";
-  if (waiting >= 8) {
-    crowdLevel = "High";
-  } else if (waiting >= 4) {
-    crowdLevel = "Medium";
-  }
-
-  return {
-    branchId: branch._id,
-    name: branch.name,
-    address: branch.address,
-    status: branch.status || "Active",
-    waiting,
-    appointments,
-    activeCounters,
-    dailyCapacity: branch.dailyCapacity || 0,
-    estimatedWaitMinutes,
-    crowdLevel,
-  };
-};
-
-const compareBranches = async (req, res) => {
+async function compareBranchLoad(req, res) {
   try {
+    const date = req.query.date || new Date().toISOString().slice(0, 10);
     const branches = await Branch.find().sort({ name: 1 });
 
-    const comparison = await Promise.all(
-      branches.map((branch) => buildBranchAnalytics(branch))
-    );
+    const result = [];
 
-    res.json({
-      success: true,
-      totalBranches: comparison.length,
-      comparison,
+    for (const branch of branches) {
+      const waitingCount = await Token.countDocuments({
+        branch: branch._id,
+        preferredDate: date,
+        status: "Waiting",
+      });
+
+      result.push({
+        branchId: branch._id,
+        branchName: branch.name,
+        status: branch.status,
+        activeCounters: branch.activeCounters,
+        dailyCapacity: branch.dailyCapacity,
+        waitingCount,
+        loadPercentage:
+          branch.dailyCapacity > 0
+            ? Math.round((waitingCount / branch.dailyCapacity) * 100)
+            : 0,
+      });
+    }
+
+    res.status(200).json({
+      date,
+      branches: result,
     });
   } catch (error) {
-    console.error("Compare branches error:", error.message);
-
     res.status(500).json({
-      success: false,
-      message: "Failed to compare branches",
+      message: "Branch load comparison failed",
       error: error.message,
     });
   }
-};
+}
 
-const leastCrowdedBranch = async (req, res) => {
+async function getLeastCrowdedBranch(req, res) {
   try {
-    const branches = await Branch.find({
-      status: { $ne: "Inactive" },
-    }).sort({ name: 1 });
+    const date = req.query.date || new Date().toISOString().slice(0, 10);
+    const branches = await Branch.find({ status: "Active" });
 
-    const analytics = await Promise.all(
-      branches.map((branch) => buildBranchAnalytics(branch))
-    );
+    let leastCrowded = null;
 
-    const sorted = analytics.sort((a, b) => {
-      if (a.waiting !== b.waiting) {
-        return a.waiting - b.waiting;
+    for (const branch of branches) {
+      const waitingCount = await Token.countDocuments({
+        branch: branch._id,
+        preferredDate: date,
+        status: "Waiting",
+      });
+
+      const current = {
+        branchId: branch._id,
+        branchName: branch.name,
+        waitingCount,
+        dailyCapacity: branch.dailyCapacity,
+      };
+
+      if (!leastCrowded || current.waitingCount < leastCrowded.waitingCount) {
+        leastCrowded = current;
       }
+    }
 
-      return a.estimatedWaitMinutes - b.estimatedWaitMinutes;
-    });
-
-    const leastCrowded = sorted[0] || null;
-
-    res.json({
-      success: true,
+    res.status(200).json({
+      date,
       leastCrowded,
-      allBranches: sorted,
     });
   } catch (error) {
-    console.error("Least crowded branch error:", error.message);
-
     res.status(500).json({
-      success: false,
-      message: "Failed to find least crowded branch",
+      message: "Least crowded branch detection failed",
       error: error.message,
     });
   }
-};
+}
+
+async function getHistoricalQueueTrends(req, res) {
+  try {
+    const history = await Token.aggregate([
+      {
+        $group: {
+          _id: "$preferredDate",
+          totalTokens: { $sum: 1 },
+          completedTokens: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Completed"] }, 1, 0],
+            },
+          },
+          waitingTokens: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Waiting"] }, 1, 0],
+            },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    res.status(200).json({
+      message: "Historical queue trend analytics",
+      history: history.map((item) => ({
+        date: item._id,
+        totalTokens: item.totalTokens,
+        completedTokens: item.completedTokens,
+        waitingTokens: item.waitingTokens,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Historical analytics failed",
+      error: error.message,
+    });
+  }
+}
 
 module.exports = {
-  compareBranches,
-  leastCrowdedBranch,
+  compareBranchLoad,
+  getLeastCrowdedBranch,
+  getHistoricalQueueTrends,
 };

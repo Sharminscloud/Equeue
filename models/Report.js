@@ -1,29 +1,49 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const reportSchema = new mongoose.Schema(
   {
     reportName: {
       type: String,
       required: true,
+      trim: true,
     },
-    dateRange: {
-      startDate: { type: Date, required: true },
-      endDate: { type: Date, required: true },
+    startDate: {
+      type: String,
+      required: true,
+    },
+    endDate: {
+      type: String,
+      required: true,
     },
     branch: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Branch',
-      required: false, // if null, it's an all-branch report
+      ref: "Branch",
+      default: null,
     },
     metrics: {
-      totalUsersServed: { type: Number, default: 0 },
-      averageWaitTime: { type: Number, default: 0 }, // in minutes
-      queuePerformanceScore: { type: String }, // e.g. 'Excellent', 'Good', 'Poor'
+      totalTokens: {
+        type: Number,
+        default: 0,
+      },
+      totalUsersServed: {
+        type: Number,
+        default: 0,
+      },
+      totalAppointments: {
+        type: Number,
+        default: 0,
+      },
+      averageWaitingTime: {
+        type: Number,
+        default: 0,
+      },
+      queuePerformanceScore: {
+        type: Number,
+        default: 0,
+      },
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('Report', reportSchema);
+module.exports = mongoose.model("Report", reportSchema);

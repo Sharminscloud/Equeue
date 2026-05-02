@@ -1,10 +1,15 @@
 const express = require("express");
-const { getWaitingTime } = require("../controllers/waitingTimeController");
-const { checkHoliday } = require("../controllers/holidayController");
-
 const router = express.Router();
 
+const {
+  estimateWaitingTime,
+  checkCapacity,
+} = require("../controllers/waitingTimeController");
+
+const { checkHoliday } = require("../controllers/holidayController");
+
 router.get("/holiday/check", checkHoliday);
-router.get("/:branchId", getWaitingTime);
+router.get("/capacity/check", checkCapacity);
+router.get("/:branchId", estimateWaitingTime);
 
 module.exports = router;

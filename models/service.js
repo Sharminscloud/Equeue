@@ -2,35 +2,40 @@ const mongoose = require("mongoose");
 
 const serviceSchema = new mongoose.Schema(
   {
-    name: {
+    serviceName: {
       type: String,
-      required: true,
+      required: [true, "Service name is required"],
+      trim: true,
     },
-
-    requiredDocuments: [
-      {
-        type: String,
-      },
-    ],
-
-    avgProcessingTime: {
+    category: {
+      type: String,
+      required: [true, "Service category is required"],
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: "",
+    },
+    averageProcessingTime: {
       type: Number,
-      required: true,
+      required: [true, "Average processing time is required"],
+      min: [1, "Average processing time must be at least 1 minute"],
     },
-
-    fee: {
+    requiredDocuments: {
+      type: [String],
+      default: [],
+    },
+    serviceFee: {
       type: Number,
       default: 0,
     },
-
-    priority: {
+    priorityLevel: {
       type: String,
-      enum: ["Low", "Medium", "High"],
-      default: "Medium",
+      enum: ["Normal", "Medium", "High"],
+      default: "Normal",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports =
-  mongoose.models.Service || mongoose.model("Service", serviceSchema);
+module.exports = mongoose.model("Service", serviceSchema);

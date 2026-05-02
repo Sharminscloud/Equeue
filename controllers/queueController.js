@@ -1,150 +1,103 @@
-const mongoose = require("mongoose");
-const QueueToken = require("../models/queueToken");
-const { triggerQueueEvent } = require("../services/pusher");
+const Token = require("../models/Token");
+const QueueDay = require("../models/QueueDay");
+const { triggerQueueUpdate } = require("../utils/pusher");
 
-async function getWaitingPosition(token) {
-  if (!token || token.status !== "Waiting") return null;
-
-  const position =
-    (await QueueToken.countDocuments({
-      branchId: token.branchId,
-      serviceId: token.serviceId,
-      status: "Waiting",
-      createdAt: { $lte: token.createdAt },
-    })) || 0;
-
-  return position;
-}
-
-async function getQueueSummary(branchId, serviceId) {
-  const [waitingCount, servingCount, completedCount] = await Promise.all([
-    QueueToken.countDocuments({ branchId, serviceId, status: "Waiting" }),
-    QueueToken.countDocuments({ branchId, serviceId, status: "Serving" }),
-    QueueToken.countDocuments({ branchId, serviceId, status: "Completed" }),
-  ]);
-
-  return { waitingCount, servingCount, completedCount };
-}
-
-async function emitQueueUpdate(eventName, tokenDoc) {
-  const waitingPosition = await getWaitingPosition(tokenDoc);
-  const summary = await getQueueSummary(tokenDoc.branchId, tokenDoc.serviceId);
-
-  await triggerQueueEvent(eventName, {
-    token: tokenDoc,
-    waitingPosition,
-    summary,
-  });
-}
-
-exports.createToken = async (req, res) => {
+async function getQueueTokens(req, res) {
   try {
-    const { serviceId, branchId, citizenName, priority } = req.body;
+    const tokens = await Token.find()
+      .populate("branch")
+      .populate("service")
+      .sort({ preferredDate: -1, tokenNumber: 1 });
 
-    if (
-      !mongoose.Types.ObjectId.isValid(serviceId) ||
-      !mongoose.Types.ObjectId.isValid(branchId)
-    ) {
-      return res.status(400).json({ message: "Invalid service or branch id" });
-    }
-
-    const sequence = await QueueToken.countDocuments();
-    const tokenNumber = `T-${String(sequence + 1).padStart(4, "0")}`;
-
-    const token = await QueueToken.create({
-      tokenNumber,
-      serviceId,
-      branchId,
-      citizenName: citizenName || "",
-      priority: priority || "Normal",
-      status: "Waiting",
+    res.status(200).json(tokens);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch queue tokens",
+      error: error.message,
     });
-
-    const populated = await QueueToken.findById(token._id)
-      .populate("serviceId", "name category")
-      .populate("branchId", "name location");
-
-    await emitQueueUpdate("token-created", populated);
-
-    res.status(201).json(populated);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-};
+}
 
-exports.getTokens = async (req, res) => {
+async function updateTokenStatus(req, res) {
   try {
-    const { branchId, serviceId, status } = req.query;
-    const filter = {};
-
-    if (branchId && mongoose.Types.ObjectId.isValid(branchId)) filter.branchId = branchId;
-    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) filter.serviceId = serviceId;
-    if (status) filter.status = status;
-
-    const tokens = await QueueToken.find(filter)
-      .populate("serviceId", "name category")
-      .populate("branchId", "name location")
-      .sort({ createdAt: 1 });
-
-    const withPositions = await Promise.all(
-      tokens.map(async (token) => ({
-        ...token.toObject(),
-        waitingPosition: await getWaitingPosition(token),
-      }))
-    );
-
-    res.json(withPositions);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.getTokenPosition = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid token id" });
-    }
-
-    const token = await QueueToken.findById(id)
-      .populate("serviceId", "name category")
-      .populate("branchId", "name location");
-
-    if (!token) return res.status(404).json({ message: "Token not found" });
-
-    const waitingPosition = await getWaitingPosition(token);
-    const summary = await getQueueSummary(token.branchId._id, token.serviceId._id);
-
-    res.json({ token, waitingPosition, summary });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.updateTokenStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
     const { status } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid token id" });
+    if (!["Waiting", "Serving", "Completed", "Cancelled"].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status",
+      });
     }
 
-    const allowedStatuses = ["Waiting", "Serving", "Completed", "Skipped", "Cancelled"];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status value" });
+    const token = await Token.findById(req.params.id);
+
+    if (!token) {
+      return res.status(404).json({
+        message: "Token not found",
+      });
     }
 
-    const token = await QueueToken.findByIdAndUpdate(id, { status }, { new: true })
-      .populate("serviceId", "name category")
-      .populate("branchId", "name location");
+    const oldStatus = token.status;
+    token.status = status;
+    await token.save();
 
-    if (!token) return res.status(404).json({ message: "Token not found" });
+    if (oldStatus !== status) {
+      const update = {};
 
-    await emitQueueUpdate("token-status-updated", token);
+      if (oldStatus === "Waiting") {
+        update.waitingCount = -1;
+      }
 
-    res.json(token);
+      if (oldStatus === "Serving") {
+        update.servingCount = -1;
+      }
+
+      if (oldStatus === "Completed") {
+        update.completedCount = -1;
+      }
+
+      if (status === "Waiting") {
+        update.waitingCount = (update.waitingCount || 0) + 1;
+      }
+
+      if (status === "Serving") {
+        update.servingCount = (update.servingCount || 0) + 1;
+      }
+
+      if (status === "Completed") {
+        update.completedCount = (update.completedCount || 0) + 1;
+      }
+
+      await QueueDay.findOneAndUpdate(
+        { branch: token.branch, date: token.preferredDate },
+        { $inc: update },
+        { upsert: true },
+      );
+    }
+
+    const populatedToken = await Token.findById(token._id)
+      .populate("branch")
+      .populate("service");
+
+    await triggerQueueUpdate({
+      tokenId: populatedToken._id,
+      tokenCode: populatedToken.tokenCode,
+      status: populatedToken.status,
+      branch: populatedToken.branch ? populatedToken.branch.name : "",
+    });
+
+    res.status(200).json({
+      message: "Token status updated successfully",
+      token: populatedToken,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Failed to update token status",
+      error: error.message,
+    });
   }
+}
+
+module.exports = {
+  getQueueTokens,
+  updateTokenStatus,
 };

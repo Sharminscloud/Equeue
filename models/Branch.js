@@ -45,26 +45,16 @@ const branchSchema = new mongoose.Schema(
     },
     activeCounters: {
       type: Number,
-      required: [true, "Active counters is required"],
-      min: [1, "Active counters must be at least 1"],
+      required: [true, "Active counter number is required"],
+      min: [1, "Active counter must be at least 1"],
     },
     status: {
       type: String,
-      required: [true, "Status is required"],
+      enum: ["Active", "Inactive", "Maintenance"],
       default: "Active",
-      enum: {
-        values: ["Active", "Inactive", "Maintenance"],
-        message: "Status must be Active, Inactive, or Maintenance",
-      },
     },
-
-    // ── Added for Shahrin's features ──
-    // availableServices: { type: [String], default: [] },
-    // isActive: { type: Boolean, default: true },
   },
   { timestamps: true },
 );
-module.exports =
-  mongoose.models.Branch || mongoose.model("Branch", branchSchema);
-//ok
-//
+
+module.exports = mongoose.model("Branch", branchSchema);

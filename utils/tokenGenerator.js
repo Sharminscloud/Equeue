@@ -1,7 +1,20 @@
-// [23301695] JAKIA — Token Generator (converted to CommonJS)
-const formatTokenNumber = ({ isPriority, queueNumber }) => {
-  const prefix = isPriority ? "P" : "N";
-  return `${prefix}-${String(queueNumber).padStart(3, "0")}`;
-};
+function padQueueNumber(queueNumber) {
+  return String(queueNumber).padStart(3, "0");
+}
 
-module.exports = { formatTokenNumber };
+function formatTokenNumber({ isPriority, queueNumber }) {
+  const prefix = isPriority ? "P" : "N";
+  return `${prefix}${padQueueNumber(queueNumber)}`;
+}
+
+function generateTokenCode(isPriority, queueNumber) {
+  return formatTokenNumber({
+    isPriority,
+    queueNumber,
+  });
+}
+
+module.exports = {
+  formatTokenNumber,
+  generateTokenCode,
+};
